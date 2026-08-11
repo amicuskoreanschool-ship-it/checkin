@@ -378,6 +378,92 @@ function setupNotionDatabase() {
   PropertiesService.getScriptProperties().setProperty("NOTION_DB_ID", data.id);
 }
 
+/* ================= 가을학기 Notion 셋업 =================
+   "아미쿠스 한국학교 26-27 가을학기" 페이지 + 체크인 DB 생성
+   8/14부터 모든 기록이 이 페이지 아래에 저장됩니다. */
+function setupFallSemester() {
+  const headers = notionHeaders_();
+  if (!headers) throw new Error("NOTION_TOKEN 이 없습니다");
+  const parent = PropertiesService.getScriptProperties().getProperty("NOTION_PARENT");
+  if (!parent) throw new Error("NOTION_PARENT 가 없습니다");
+  const m = parent.replace(/-/g, "").match(/[0-9a-f]{32}/i);
+  // 1) 학기 페이지
+  const pageRes = UrlFetchApp.fetch("https://api.notion.com/v1/pages", {
+    method: "post", headers: headers, muteHttpExceptions: true,
+    payload: JSON.stringify({
+      parent: { type: "page_id", page_id: m[0] },
+      icon: { type: "emoji", emoji: "🍂" },
+      properties: { title: { title: [{ text: { content: "아미쿠스 한국학교 26-27 가을학기" } }] } },
+      children: [
+        { object: "block", type: "callout", callout: {
+            icon: { type: "emoji", emoji: "🗓️" },
+            rich_text: [{ text: { content: "가을학기 일정: 8/14 - 11/20 (15주)" } }] } },
+        { object: "block", type: "paragraph", paragraph: {
+            rich_text: [{ text: { content: "체크인/체크아웃 기록과 매주 금요일 요약이 이 페이지에 자동 저장됩니다." } }] } },
+      ],
+    }),
+  });
+  const page = JSON.parse(pageRes.getContentText());
+  if (!page.id) throw new Error("학기 페이지 생성 실패: " + pageRes.getContentText());
+  // 2) 체크인 기록 DB
+  const dbRes = UrlFetchApp.fetch("https://api.notion.com/v1/databases", {
+    method: "post", headers: headers, muteHttpExceptions: true,
+    payload: JSON.stringify({
+      parent: { type: "page_id", page_id: page.id },
+      title: [{ text: { content: "체크인 기록 (가을학기)" } }],
+      properties: {
+        "이름": { title: {} },
+        "성별": { select: {} }, "등록수업": { select: {} },
+        "구분": { select: {} }, "기록자": { select: {} }, "시간": { date: {} },
+      },
+    }),
+  });
+  const db = JSON.parse(dbRes.getContentText());
+  if (!db.id) throw new Error("DB 생성 실패: " + dbRes.getContentText());
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty("SEMESTER_PAGE_ID", page.id);
+  props.setProperty("NOTION_DB_ID", db.id);
+  Logger.log("semester page: " + page.id + " / db: " + db.id);
+}
+
+/* ================= 테스트 데이터 정리 (8/13 자동 실행) ================= */
+function cleanupTestData() {
+  // 시트: 헤더만 남기고 전부 삭제
+  [LOG_SHEET, LEARN_SHEET, EXAM_SHEET, WEEKLY_SHEET, REASON_SHEET].forEach(function(name) {
+    const sh = ss_().getSheetByName(name);
+    if (!sh) return;
+    const n = sh.getLastRow();
+    if (n > 1) sh.deleteRows(2, n - 1);
+  });
+  // Notion 체크인 DB: 테스트 기록 전부 보관 처리(archive)
+  try {
+    const headers = notionHeaders_();
+    const dbId = PropertiesService.getScriptProperties().getProperty("NOTION_DB_ID");
+    if (headers && dbId) {
+      let cursor = null, guard = 0;
+      while (guard++ < 20) {
+        const body = cursor ? { start_cursor: cursor, page_size: 100 } : { page_size: 100 };
+        const res = UrlFetchApp.fetch("https://api.notion.com/v1/databases/" + dbId + "/query",
+          { method: "post", headers: headers, payload: JSON.stringify(body), muteHttpExceptions: true });
+        const data = JSON.parse(res.getContentText());
+        (data.results || []).forEach(function(p) {
+          UrlFetchApp.fetch("https://api.notion.com/v1/pages/" + p.id,
+            { method: "patch", headers: headers, payload: JSON.stringify({ archived: true }), muteHttpExceptions: true });
+        });
+        if (!data.has_more) break;
+        cursor = data.next_cursor;
+      }
+    }
+  } catch (e) { Logger.log("notion cleanup error: " + e); }
+}
+function installCleanupTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === "cleanupTestData") ScriptApp.deleteTrigger(t);
+  });
+  // 2026년 8월 13일 오후 11시에 1회 실행
+  ScriptApp.newTrigger("cleanupTestData").timeBased().at(new Date(2026, 7, 13, 23, 0)).create();
+}
+
 /* ================= 금요일 자동 요약 (금 오후 10시) ================= */
 function buildSummary_() {
   const roster = readRoster();
@@ -428,6 +514,24 @@ function buildSummary_() {
     html: html, today: today, weekly: weekly,
   };
 }
+function buildReminder_(name, classes, today) {
+  const nm = name.replace(/\s*선생님\s*$/, "");
+  const md = today.slice(5).replace("-", "/");
+  const html =
+      "<div style='font-family:Apple SD Gothic Neo,Malgun Gothic,sans-serif;max-width:560px;margin:0 auto;background:#FFF6EA;border-radius:16px;padding:26px'>" +
+      "<h2 style='color:#E85D04;margin:0 0 12px'>📝 " + md + " 주간 마무리 안내</h2>" +
+      "<p style='font-size:16px;line-height:1.7'><b>" + nm + " 선생님</b> 주간 마무리가 안되었습니다.<br>주간 마무리를 부탁드립니다.</p>" +
+      "<p style='background:#FFFDF8;border-left:4px solid #FF8A3D;padding:12px 16px;border-radius:8px;font-size:14px'>" +
+      "담당 반: <b>" + classes.join(", ") + "</b><br>" +
+      "선생님 포털 → <b>주간마무리</b> 탭에서 작성해주세요.<br>특이사항이 없으면 <b>[특이사항 없음]</b> 버튼 클릭 OK!</p>" +
+      "<p style='margin-top:16px'><a href='" + PORTAL_URL + "' style='background:#FF8A3D;color:#fff;text-decoration:none;font-weight:800;padding:11px 22px;border-radius:99px;display:inline-block'>선생님 포털 열기</a></p>" +
+      "<p style='color:#8A7A66;font-size:12.5px;margin-top:18px'>아미쿠스 한국학교 · 이 메일은 자동 발송되었습니다.</p></div>";
+  return {
+    subject: "[아미쿠스 한국학교] " + md + " 주간 마무리 부탁드립니다 📝",
+    body: nm + " 선생님 주간 마무리가 안되었습니다. 주간 마무리를 부탁드립니다.\n" + PORTAL_URL,
+    html: html,
+  };
+}
 function sendTeacherReminders_(today, weekly) {
   const teachers = readTeachers_();
   const byEmail = {};
@@ -441,23 +545,8 @@ function sendTeacherReminders_(today, weekly) {
   let sent = 0;
   Object.keys(byEmail).forEach(function(email) {
     const info = byEmail[email];
-    const nm = info.name.replace(/\s*선생님\s*$/, "");
-    const md = today.slice(5).replace("-", "/");
-    const html =
-      "<div style='font-family:Apple SD Gothic Neo,Malgun Gothic,sans-serif;max-width:560px;margin:0 auto;background:#FFF6EA;border-radius:16px;padding:26px'>" +
-      "<h2 style='color:#E85D04;margin:0 0 12px'>📝 " + md + " 주간 마무리 안내</h2>" +
-      "<p style='font-size:16px;line-height:1.7'><b>" + nm + " 선생님</b> 주간 마무리가 안되었습니다.<br>주간 마무리를 부탁드립니다.</p>" +
-      "<p style='background:#FFFDF8;border-left:4px solid #FF8A3D;padding:12px 16px;border-radius:8px;font-size:14px'>" +
-      "담당 반: <b>" + info.classes.join(", ") + "</b><br>" +
-      "선생님 포털 → <b>주간마무리</b> 탭에서 작성해주세요.<br>특이사항이 없으면 <b>[특이사항 없음]</b> 버튼 클릭 OK!</p>" +
-      "<p style='margin-top:16px'><a href='" + PORTAL_URL + "' style='background:#FF8A3D;color:#fff;text-decoration:none;font-weight:800;padding:11px 22px;border-radius:99px;display:inline-block'>선생님 포털 열기</a></p>" +
-      "<p style='color:#8A7A66;font-size:12.5px;margin-top:18px'>아미쿠스 한국학교 · 이 메일은 자동 발송되었습니다.</p></div>";
-    MailApp.sendEmail({
-      to: email,
-      subject: "[아미쿠스 한국학교] " + md + " 주간 마무리 부탁드립니다 📝",
-      body: nm + " 선생님 주간 마무리가 안되었습니다. 주간 마무리를 부탁드립니다.\n" + PORTAL_URL,
-      htmlBody: html,
-    });
+    const mail = buildReminder_(info.name, info.classes, today);
+    MailApp.sendEmail({ to: email, subject: mail.subject, body: mail.body, htmlBody: mail.html });
     sent++;
   });
   return sent;
@@ -468,7 +557,8 @@ function fridaySummary() {
   try { sendTeacherReminders_(s.today, s.weekly); } catch (e) { Logger.log("reminder error: " + e); }
   try {
     const headers = notionHeaders_();
-    const parent = PropertiesService.getScriptProperties().getProperty("NOTION_PARENT");
+    const props = PropertiesService.getScriptProperties();
+    const parent = props.getProperty("SEMESTER_PAGE_ID") || props.getProperty("NOTION_PARENT");
     if (headers && parent) {
       const m = parent.replace(/-/g, "").match(/[0-9a-f]{32}/i);
       if (m) {
@@ -493,8 +583,16 @@ function installFridayTrigger() {
   });
   ScriptApp.newTrigger("fridaySummary").timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(22).create();
 }
-/* 테스트용: 관리자 요약 + 선생님 리마인더를 즉시 발송해보기 */
-function testFridayEmails() { fridaySummary(); }
+/* 테스트용: 실제 선생님들에게는 보내지 않고,
+   관리자 이메일로 (1) 관리자 요약 (2) 선생님 리마인더 샘플을 보내봅니다 */
+function testEmailsToAdmin() {
+  const s = buildSummary_();
+  MailApp.sendEmail({ to: ADMIN_EMAIL, subject: "[테스트] " + s.subject, body: s.body, htmlBody: s.html });
+  const teachers = readTeachers_();
+  const t = teachers[0] || { name: "백송이 선생님", cls: "가람반" };
+  const mail = buildReminder_(t.name, [t.cls], todayStr_());
+  MailApp.sendEmail({ to: ADMIN_EMAIL, subject: "[테스트] " + mail.subject, body: mail.body, htmlBody: mail.html });
+}
 
 /* 테스트 */
 function testPortal() { Logger.log(JSON.stringify({
