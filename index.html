@@ -249,14 +249,16 @@ async function post(body){
 async function syncFromServer(){
   if(!CONFIG.API_URL) return;
   try{
-    const d = await api({action:"today"});
-    if(d && d.ok){ LOG = d.log || []; saveLocal(); }
     const r = await api({action:"roster"});
     if(r && r.ok && r.roster && r.roster.length){
       ROSTER = r.roster.map(s=>({...s, id:s.name+"|"+s.cls}));
+      $("banner").style.display="none";
     }
-    $("banner").style.display="none";
-  }catch(e){ console.warn(e); }
+  }catch(e){ console.warn("roster", e); }
+  try{
+    const d = await api({action:"today"});
+    if(d && d.ok){ LOG = d.log || []; saveLocal(); }
+  }catch(e){ console.warn("today", e); }
 }
 
 /* ---------- 상태 ---------- */
@@ -464,8 +466,13 @@ $("schoolName").textContent=CONFIG.SCHOOL_NAME;
 $("footNote").textContent=CONFIG.SCHOOL_NAME+" 체크인 시스템";
 if(!CONFIG.API_URL) $("banner").style.display="block";
 loadLocal();
-syncFromServer();
-search("");
+(async ()=>{
+  for(let i=0; i<4 && ROSTER.length===0; i++){
+    await syncFromServer();
+    if(ROSTER.length===0) await new Promise(r=>setTimeout(r, 1500));
+  }
+  search($("q").value);
+})();
 </script>
 </body>
 </html>
