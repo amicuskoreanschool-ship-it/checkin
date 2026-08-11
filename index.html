@@ -4,145 +4,194 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>아미쿠스 한국학교 체크인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
   :root{
-    --blue:#256EF4; --blue-dark:#1D5BD6; --blue-bg:#EFF5FF;
-    --green:#008A1E; --green-bg:#EAF6EC;
-    --red:#DE3412; --red-bg:#FDEFED;
-    --amber:#B27B00; --amber-bg:#FFF6E0;
-    --ink:#1E2124; --ink2:#464C53; --ink3:#8A949E;
-    --line:#E6E8EA; --bg:#F4F5F6; --card:#FFFFFF;
-    --radius:16px;
+    --cream:#FFF6EA; --paper:#FFFFFF;
+    --ink:#43352A; --ink2:#7A6A5C; --ink3:#B3A395;
+    --line:#F0E2D2; --line-soft:#F7EDE0;
+    --orange:#FF8A3D; --orange-deep:#F26B1D; --orange-bg:#FFEFE0;
+    --yellow:#FFD466;
+    --green:#3FA765; --green-bg:#E6F6EC;
+    --amber:#C98A0C; --amber-bg:#FFF3D6;
+    --blue:#5BA8E5;
+    --stamp:#E8543F;
+    --radius:20px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
-    font-family:"Pretendard","Pretendard Variable","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
-    background:var(--bg); color:var(--ink);
+    font-family:"Pretendard Variable","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:var(--cream); color:var(--ink);
     display:flex; flex-direction:column; user-select:none;
   }
+  .jua{font-family:"Jua","Pretendard Variable",sans-serif;font-weight:400}
+  /* ---------- header ---------- */
   header{
-    background:var(--card); border-bottom:1px solid var(--line);
-    padding:12px 20px; display:flex; align-items:center; gap:13px;
+    padding:16px 24px 10px; display:flex; align-items:center; gap:14px;
   }
   .logo{
-    width:42px;height:42px;border-radius:12px;background:var(--blue);
+    width:48px;height:48px;border-radius:15px;background:var(--orange);
     display:flex;align-items:center;justify-content:center;
-    color:#fff;font-weight:800;font-size:19px;flex:none;
+    color:#fff;font-family:"Jua";font-size:24px;flex:none;
+    transform:rotate(-6deg);
+    box-shadow:0 4px 0 rgba(242,107,29,.25);
   }
   .htitle{flex:1;min-width:0}
-  .htitle h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+  .htitle h1{font-family:"Jua";font-size:21px;font-weight:400;letter-spacing:-.2px}
   .htitle p{font-size:12.5px;color:var(--ink3);margin-top:1px}
   .clock{text-align:right}
   .clock .date{font-size:12.5px;color:var(--ink2)}
-  .clock .time{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
-  .hbtn{border:none;background:var(--bg);font-size:13.5px;font-weight:600;color:var(--ink2);
-    padding:9px 13px;border-radius:10px;cursor:pointer;font-family:inherit}
-  .hbtn.active{background:var(--blue-bg);color:var(--blue)}
-  main{flex:1;display:flex;flex-direction:column;align-items:center;padding:22px 18px 16px;overflow:hidden}
-  .stage{width:100%;max-width:720px;display:flex;flex-direction:column;flex:1;min-height:0}
-  .prompt{font-size:23px;font-weight:700;text-align:center;line-height:1.4;letter-spacing:-.4px}
-  .prompt small{display:block;font-size:14px;color:var(--ink3);font-weight:400;margin-top:5px}
+  .clock .time{font-family:"Jua";font-size:22px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .hbtn{
+    border:none;background:#fff;font-size:13.5px;font-weight:700;color:var(--ink2);
+    padding:10px 15px;border-radius:99px;cursor:pointer;font-family:inherit;
+    border:1.5px solid var(--line);
+  }
+  .hbtn.active{background:var(--orange);border-color:var(--orange);color:#fff}
+  /* ---------- main ---------- */
+  main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px 20px 16px;overflow:hidden;position:relative}
+  .deco{position:absolute;font-family:"Jua";color:#F2E3CE;z-index:0;pointer-events:none}
+  .deco.d1{font-size:120px;left:-14px;bottom:-30px;transform:rotate(-12deg)}
+  .deco.d2{font-size:90px;right:6px;top:10px;transform:rotate(10deg)}
+  .deco.d3{font-size:70px;right:60px;bottom:40px;transform:rotate(-7deg);color:#F5E9DA}
+  .stage{width:100%;max-width:700px;display:flex;flex-direction:column;flex:1;min-height:0;position:relative;z-index:1}
+  .prompt{font-family:"Jua";font-size:27px;text-align:center;line-height:1.35}
+  .prompt small{display:block;font-family:"Pretendard Variable",sans-serif;font-size:14px;color:var(--ink3);font-weight:500;margin-top:6px}
   .searchbox{margin-top:16px;position:relative}
   .searchbox input{
-    width:100%;height:62px;border:2px solid var(--line);border-radius:var(--radius);
-    background:var(--card);font-size:21px;padding:0 58px 0 20px;outline:none;font-family:inherit;
+    width:100%;height:66px;border:2.5px solid var(--line);border-radius:24px;
+    background:var(--paper);font-size:22px;padding:0 60px 0 24px;outline:none;
+    font-family:inherit;color:var(--ink);
+    box-shadow:0 3px 0 rgba(210,180,140,.12);
   }
-  .searchbox input:focus{border-color:var(--blue)}
-  .searchbox .sicon{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:21px;color:var(--ink3)}
-  #clearBtn{position:absolute;right:14px;top:50%;transform:translateY(-50%);
-    width:36px;height:36px;border-radius:50%;border:none;background:var(--line);
+  .searchbox input::placeholder{color:#CBBBA8}
+  .searchbox input:focus{border-color:var(--orange)}
+  .searchbox .sicon{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:22px}
+  #clearBtn{position:absolute;right:15px;top:50%;transform:translateY(-50%);
+    width:38px;height:38px;border-radius:50%;border:none;background:var(--line-soft);
     color:var(--ink2);font-size:16px;cursor:pointer;display:none}
-  .scroll{margin-top:13px;overflow-y:auto;flex:1;min-height:0;padding-bottom:8px}
-  .hintbox{text-align:center;color:var(--ink3);font-size:15px;padding:32px 10px;line-height:1.7}
-  .kbadge{display:inline-block;background:var(--blue-bg);color:var(--blue);border-radius:8px;padding:2px 10px;font-weight:600}
+  .scroll{margin-top:14px;overflow-y:auto;flex:1;min-height:0;padding:2px 2px 10px}
+  .hintbox{text-align:center;color:var(--ink3);font-size:15px;padding:34px 10px;line-height:1.8}
+  .kbadge{display:inline-block;background:var(--orange-bg);color:var(--orange-deep);border-radius:10px;padding:2px 10px;font-weight:700}
+  /* ---------- student card = 이름표 ---------- */
   .scard{
-    background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);
-    padding:15px 18px;display:flex;align-items:center;gap:15px;margin-bottom:9px;
-    cursor:pointer;transition:border-color .12s, transform .06s;
+    background:var(--paper);border:2px solid var(--line);border-radius:var(--radius);
+    padding:15px 18px;display:flex;align-items:center;gap:15px;margin-bottom:10px;
+    cursor:pointer;transition:transform .08s, border-color .12s;
+    animation:rise .22s ease-out both;
   }
-  .scard:active{transform:scale(.985);border-color:var(--blue)}
-  .avatar{width:50px;height:50px;border-radius:50%;flex:none;display:flex;align-items:center;
-    justify-content:center;font-size:21px;font-weight:700;color:#fff}
-  .avatar.m{background:#4A7DDE}
-  .avatar.f{background:#D96BA0}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .scard:active{transform:scale(.985);border-color:var(--orange)}
+  .avatar{
+    width:54px;height:54px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Jua";font-size:24px;
+  }
   .sinfo{flex:1;min-width:0}
-  .sname{font-size:20px;font-weight:700;letter-spacing:-.3px}
-  .smeta{margin-top:4px;display:flex;gap:7px;flex-wrap:wrap}
-  .chip{font-size:13px;padding:3px 10px;border-radius:8px;font-weight:600}
-  .chip.gender{background:var(--bg);color:var(--ink2)}
-  .chip.cls{background:var(--blue-bg);color:var(--blue)}
-  .badge{font-size:13.5px;font-weight:700;padding:6px 12px;border-radius:9px;flex:none}
-  .badge.none{background:var(--bg);color:var(--ink3)}
+  .sname{font-family:"Jua";font-size:21px;letter-spacing:-.2px}
+  .smeta{margin-top:5px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .chip{font-size:13px;padding:3.5px 11px;border-radius:99px;font-weight:700}
+  .chip.gender{background:var(--line-soft);color:var(--ink2)}
+  .badge{font-size:14px;font-weight:800;padding:7px 13px;border-radius:99px;flex:none}
   .badge.in{background:var(--green-bg);color:var(--green)}
   .badge.out{background:var(--amber-bg);color:var(--amber)}
-  .badge.pick{background:var(--blue-bg);color:var(--blue)}
-  .overlay{position:fixed;inset:0;background:rgba(20,25,35,.45);display:none;
+  .badge.pick{background:var(--orange-bg);color:var(--orange-deep)}
+  /* ---------- modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(67,53,42,.42);display:none;
     align-items:center;justify-content:center;padding:22px;z-index:50}
   .overlay.show{display:flex}
-  .modal{background:var(--card);border-radius:22px;max-width:470px;width:100%;
-    padding:28px 24px 22px;text-align:center;animation:pop .18s ease-out;
+  .modal{background:var(--paper);border-radius:28px;max-width:470px;width:100%;
+    padding:30px 26px 24px;text-align:center;animation:pop .2s ease-out;
     max-height:88vh;overflow-y:auto}
-  @keyframes pop{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
-  .modal .avatar{width:70px;height:70px;font-size:29px;margin:0 auto}
-  .modal h2{font-size:25px;margin-top:13px;letter-spacing:-.4px}
-  .modal .mmeta{margin-top:9px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .modal .mmeta .chip{font-size:14.5px;padding:5px 13px}
-  .modal .q{margin-top:16px;font-size:15.5px;color:var(--ink2)}
-  .mbtns{display:flex;gap:9px;margin-top:20px}
-  .btn{flex:1;height:58px;border-radius:14px;border:none;font-size:18px;font-weight:700;
+  @keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .avatar{width:76px;height:76px;font-size:33px;margin:0 auto}
+  .modal h2{font-family:"Jua";font-size:28px;font-weight:400;margin-top:13px}
+  .modal .mmeta{margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .modal .mmeta .chip{font-size:14.5px;padding:6px 14px}
+  .modal .q{margin-top:17px;font-size:16px;color:var(--ink2)}
+  .mbtns{display:flex;gap:10px;margin-top:22px}
+  .btn{flex:1;height:60px;border-radius:18px;border:none;font-size:18px;font-weight:800;
     cursor:pointer;font-family:inherit;letter-spacing:-.3px}
-  .btn.ghost{background:var(--bg);color:var(--ink2)}
-  .btn.primary{background:var(--blue);color:#fff}
-  .btn.primary:active{background:var(--blue-dark)}
+  .btn.ghost{background:var(--line-soft);color:var(--ink2)}
+  .btn.primary{background:var(--orange);color:#fff;box-shadow:0 4px 0 rgba(242,107,29,.3)}
+  .btn.primary:active{background:var(--orange-deep);box-shadow:none;transform:translateY(2px)}
   .btn.warn{background:var(--amber-bg);color:var(--amber)}
-  .btn.sm{height:46px;font-size:15.5px;border-radius:11px}
-  .done .ic{width:92px;height:92px;border-radius:50%;margin:4px auto 0;display:flex;
-    align-items:center;justify-content:center;font-size:44px;color:#fff;animation:pop .25s ease-out}
-  .done .ic.in{background:var(--green)}
-  .done .ic.out{background:var(--amber)}
-  .done .sub{margin-top:8px;color:var(--ink2);font-size:15.5px;line-height:1.6}
-  #banner{display:none;background:#FFF3CD;color:#7A5A00;font-size:13px;
-    padding:7px 14px;text-align:center;border-bottom:1px solid #F0E0A0}
-  .pinpad input{width:100%;height:54px;text-align:center;font-size:25px;letter-spacing:8px;
-    border:2px solid var(--line);border-radius:12px;outline:none;margin-top:14px;font-family:inherit}
-  /* class chips */
-  .clsbar{display:flex;gap:8px;overflow-x:auto;padding:14px 2px 2px;flex:none}
-  .clschip{flex:none;border:1.5px solid var(--line);background:var(--card);border-radius:12px;
-    padding:10px 15px;font-size:15px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
-  .clschip.on{background:var(--blue);border-color:var(--blue);color:#fff}
-  .trow{
-    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
-    padding:12px 15px;display:flex;align-items:center;gap:12px;margin-bottom:8px;
+  .btn.sm{height:48px;font-size:15.5px;border-radius:14px}
+  /* ---------- 도장 (stamp) done screen ---------- */
+  .stampwrap{position:relative;width:200px;height:200px;margin:10px auto 4px}
+  .stamp{
+    position:absolute;inset:0;border-radius:50%;
+    border:4px solid currentColor;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    transform:rotate(-8deg);
+    animation:stampin .45s cubic-bezier(.2,1.4,.4,1) both;
   }
-  .trow .avatar{width:42px;height:42px;font-size:17px}
-  .trow .sname{font-size:17.5px}
+  .stamp::before{
+    content:"";position:absolute;inset:7px;border-radius:50%;
+    border:1.5px solid currentColor;opacity:.7;
+  }
+  .stamp.in{color:var(--stamp)}
+  .stamp.out{color:var(--blue)}
+  .stamp .big{font-family:"Jua";font-size:38px;line-height:1.1}
+  .stamp .small{font-family:"Jua";font-size:16px;opacity:.85}
+  @keyframes stampin{
+    0%{transform:scale(2.1) rotate(-24deg);opacity:0}
+    55%{transform:scale(.94) rotate(-7deg);opacity:1}
+    100%{transform:scale(1) rotate(-8deg)}
+  }
+  .done h2{margin-top:10px}
+  .done .sub{margin-top:7px;color:var(--ink2);font-size:15.5px;line-height:1.6}
+  @media (prefers-reduced-motion: reduce){
+    .stamp,.scard,.modal{animation:none}
+  }
+  /* ---------- banner ---------- */
+  #banner{display:none;background:var(--yellow);color:#6B5200;font-size:13px;
+    padding:8px 16px;text-align:center;font-weight:600}
+  /* ---------- teacher ---------- */
+  .clsbar{display:flex;gap:8px;overflow-x:auto;padding:14px 2px 4px;flex:none}
+  .clschip{flex:none;border:2px solid var(--line);background:var(--paper);border-radius:99px;
+    padding:10px 16px;font-family:"Jua";font-size:15px;color:var(--ink2);cursor:pointer}
+  .trow{
+    background:var(--paper);border:2px solid var(--line);border-radius:18px;
+    padding:12px 15px;display:flex;align-items:center;gap:12px;margin-bottom:9px;
+  }
+  .trow .avatar{width:44px;height:44px;font-size:19px}
+  .trow .sname{font-size:18px}
   .tstate{display:flex;gap:6px;flex:none}
-  .tbtn{border:1.5px solid var(--line);background:var(--card);border-radius:9px;
-    padding:8px 11px;font-size:13.5px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:inherit}
+  .tbtn{border:2px solid var(--line);background:var(--paper);border-radius:12px;
+    padding:9px 12px;font-size:13.5px;font-weight:800;color:var(--ink3);cursor:pointer;font-family:inherit}
   .tbtn.in.on{background:var(--green-bg);border-color:var(--green);color:var(--green)}
   .tbtn.out.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
-  .tbtn.none.on{background:var(--bg);border-color:var(--ink3);color:var(--ink2)}
-  .summary{display:flex;gap:9px;flex-wrap:wrap;padding-top:14px;flex:none}
-  .stat{flex:1;min-width:100px;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:12px 14px}
-  .stat b{display:block;font-size:23px}
-  .stat span{font-size:12.5px;color:var(--ink3)}
-  table.adm{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;font-size:14.5px}
-  table.adm th{background:var(--bg);text-align:left;padding:10px 12px;font-size:13px;color:var(--ink2)}
-  table.adm td{padding:10px 12px;border-top:1px solid var(--line)}
-  table.adm td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
-  footer{text-align:center;font-size:11.5px;color:var(--ink3);padding:8px;border-top:1px solid var(--line);background:var(--card)}
+  .tbtn.none.on{background:var(--line-soft);border-color:var(--ink3);color:var(--ink2)}
+  .summary{display:flex;gap:10px;flex-wrap:wrap;padding-top:14px;flex:none}
+  .stat{flex:1;min-width:100px;background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:13px 15px}
+  .stat b{display:block;font-family:"Jua";font-size:26px;font-weight:400}
+  .stat span{font-size:12.5px;color:var(--ink3);font-weight:600}
+  /* ---------- admin ---------- */
+  table.adm{width:100%;border-collapse:separate;border-spacing:0;background:var(--paper);
+    border:2px solid var(--line);border-radius:18px;overflow:hidden;font-size:14.5px}
+  table.adm th{background:var(--line-soft);text-align:left;padding:11px 13px;font-size:12.5px;color:var(--ink2)}
+  table.adm td{padding:11px 13px;border-top:1.5px solid var(--line-soft)}
+  table.adm td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
+  .pinpad input{width:100%;height:58px;text-align:center;font-size:26px;letter-spacing:8px;
+    border:2.5px solid var(--line);border-radius:16px;outline:none;margin-top:16px;font-family:inherit}
+  .pinpad input:focus{border-color:var(--orange)}
+  footer{text-align:center;font-size:11.5px;color:var(--ink3);padding:9px}
 </style>
 </head>
 <body>
 
-<div id="banner">⚠️ 오프라인 모드 — 기록이 이 기기에만 저장됩니다 (백엔드 연결 전)</div>
+<div id="banner">⚠️ 오프라인 모드 — 기록이 이 기기에만 저장됩니다</div>
 
 <header>
   <div class="logo">한</div>
   <div class="htitle">
     <h1 id="schoolName">아미쿠스 한국학교</h1>
-    <p id="modeLabel">학생 체크인 · Check-in</p>
+    <p id="modeLabel">어서 오세요! · Check-in</p>
   </div>
   <div class="clock">
     <div class="date" id="dateNow"></div>
@@ -153,15 +202,19 @@
 </header>
 
 <main>
+  <span class="deco d1">ㅎ</span>
+  <span class="deco d2">ㅏ</span>
+  <span class="deco d3">ㄴ</span>
+
   <!-- ============ 학부모 키오스크 ============ -->
   <div class="stage" id="viewKiosk">
-    <div class="prompt">학생 이름을 검색해 주세요<small>이름 일부 또는 초성(ㄱㄴㄷ)으로도 검색됩니다</small></div>
+    <div class="prompt">우리 아이 이름을 찾아주세요!<small>이름 일부 또는 초성(ㄱㄴㄷ)으로도 검색됩니다</small></div>
     <div class="searchbox">
       <input id="q" type="text" placeholder="예: 김사랑 또는 ㄱㅅㄹ" autocomplete="off">
       <span class="sicon" id="sicon">🔍</span>
       <button id="clearBtn">✕</button>
     </div>
-    <div class="scroll" id="results"><div class="hintbox">이름을 입력하면 학생이 여기에 표시됩니다</div></div>
+    <div class="scroll" id="results"><div class="hintbox">이름을 입력하면 학생이 여기에 나타나요</div></div>
   </div>
 
   <!-- ============ 선생님 ============ -->
@@ -182,7 +235,7 @@
   </div>
 </main>
 
-<footer id="footNote">아미쿠스 한국학교 체크인 시스템</footer>
+<footer id="footNote">아미쿠스 한국학교 체크인</footer>
 
 <div class="overlay" id="confirmOv"><div class="modal" id="confirmModal"></div></div>
 <div class="overlay" id="doneOv"><div class="modal done" id="doneModal"></div></div>
@@ -190,25 +243,40 @@
 
 <script>
 /* =====================================================================
-   CONFIG
-   API_URL: Google Apps Script 웹앱 URL. 비우면 오프라인(이 기기만) 모드.
+   CONFIG — API_URL: Google Apps Script 웹앱 URL (비우면 오프라인 모드)
    ===================================================================== */
 const CONFIG = {
   SCHOOL_NAME: "아미쿠스 한국학교",
   API_URL: "https://script.google.com/macros/s/AKfycbziGOuwT-o0_IIGCxRvMVN069lWvTzjElM-4Le2s95HRA1N2rj-I5qB71XwZ6iTu9gH/exec",
   TEACHER_PIN: "1111",
   ADMIN_PIN: "2026",
-  SYNC_SEC: 30,           // 선생님/관리자 화면 자동 새로고침 주기(초)
+  SYNC_SEC: 30,
 };
 
-/* 명단 (시트 '학생들' 탭 — 자동 생성됨. API 연결 시 시트에서 최신 명단을 다시 불러옵니다) */
-const ROSTER_DATA = []; // 명단은 백엔드(구글시트)에서 불러옵니다 — 개인정보 보호를 위해 공개 파일에 포함하지 않음
+const ROSTER_DATA = []; // 명단은 백엔드(구글시트)에서 불러옵니다
 
 let ROSTER = ROSTER_DATA.map(r => ({name:r[0], gender:r[1], cls:r[2], id:r[0]+"|"+r[2]}));
-let LOG = [];   // {id,name,gender,cls,type:'in'|'out'|'none',ts,by}
+let LOG = [];
 let MODE = "kiosk";
 const $ = id => document.getElementById(id);
 const getClasses = () => [...new Set(ROSTER.map(s=>s.cls))];
+
+/* ---------- 반별 색상 ---------- */
+const CLS_COLORS = {
+  "가람": ["#E3F0FE","#2E6FBB"], "누리": ["#EFE7FD","#6C4FC4"],
+  "다솜": ["#FDE7EF","#D14D84"], "마루": ["#E4F6F9","#1F8CA8"],
+  "슬기": ["#E8F6E3","#3E9142"], "아름": ["#FFF3D6","#C98A0C"],
+  "자비": ["#E2F5F0","#1F9077"], "파도": ["#E3ECFB","#3757B8"],
+  "하늘": ["#E0F2FF","#2B8FD8"],
+};
+function clsColor(cls){
+  const base = Object.keys(CLS_COLORS).find(k => (cls||"").startsWith(k));
+  return base ? CLS_COLORS[base] : ["#F3EBE0","#8A6D4F"];
+}
+const avatarHtml = (s, extra="") =>
+  `<div class="avatar" style="background:${clsColor(s.cls)[0]};color:${clsColor(s.cls)[1]};${extra}">${s.name.replace(/\s/g,"")[0]||"?"}</div>`;
+const clsChip = s =>
+  `<span class="chip" style="background:${clsColor(s.cls)[0]};color:${clsColor(s.cls)[1]}">${s.cls}</span>`;
 
 /* ---------- 초성 검색 ---------- */
 const CHO=["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
@@ -275,26 +343,26 @@ function search(qraw){
   const q=qraw.trim(), box=$("results");
   $("clearBtn").style.display=q?"block":"none";
   $("sicon").style.display=q?"none":"block";
-  if(!q){ box.innerHTML=`<div class="hintbox">이름을 입력하면 학생이 여기에 표시됩니다</div>`; return; }
+  if(!q){ box.innerHTML=`<div class="hintbox">이름을 입력하면 학생이 여기에 나타나요</div>`; return; }
   const qn=q.replace(/\s/g,"");
   const matches = ROSTER.filter(s=>{
     const nm=s.name.replace(/\s/g,"");
     return isChoOnly(qn) ? choseong(nm).includes(qn) : nm.includes(qn);
   });
   if(!matches.length){
-    box.innerHTML=`<div class="hintbox">검색 결과가 없습니다.<br>예) <span class="kbadge">김사랑</span> <span class="kbadge">ㄱㅅㄹ</span></div>`;
+    box.innerHTML=`<div class="hintbox">검색 결과가 없어요.<br>예) <span class="kbadge">김사랑</span> <span class="kbadge">ㄱㅅㄹ</span></div>`;
     return;
   }
-  box.innerHTML=matches.slice(0,30).map(s=>{
+  box.innerHTML=matches.slice(0,30).map((s,i)=>{
     const st=stateOf(s.id);
     const badge = st==="in" ? `<span class="badge in">✓ 등원</span>`
-                : st==="out" ? `<span class="badge out">하원함</span>`
+                : st==="out" ? `<span class="badge out">👋 하원</span>`
                 : `<span class="badge pick">선택 ›</span>`;
-    return `<div class="scard" onclick="openConfirm('${s.id.replace(/'/g,"\\'")}')">
-      <div class="avatar ${s.gender==="여"?"f":"m"}">${s.name.replace(/\s/g,"")[0]||"?"}</div>
+    return `<div class="scard" style="animation-delay:${Math.min(i*40,240)}ms" onclick="openConfirm('${s.id.replace(/'/g,"\\'")}')">
+      ${avatarHtml(s)}
       <div class="sinfo">
         <div class="sname">${s.name}</div>
-        <div class="smeta"><span class="chip gender">${s.gender}</span><span class="chip cls">${s.cls}</span></div>
+        <div class="smeta"><span class="chip gender">${s.gender}</span>${clsChip(s)}</div>
       </div>${badge}</div>`;
   }).join("");
 }
@@ -307,12 +375,12 @@ function openConfirm(id){
   current=s;
   const st=stateOf(id), isIn=st==="in";
   $("confirmModal").innerHTML=`
-    <div class="avatar ${s.gender==="여"?"f":"m"}">${s.name.replace(/\s/g,"")[0]}</div>
+    ${avatarHtml(s)}
     <h2>${s.name}</h2>
-    <div class="mmeta"><span class="chip gender">${s.gender}</span><span class="chip cls">${s.cls}</span></div>
-    <div class="q">${isIn?"오늘 이미 등원 체크인되어 있어요.":"이 학생이 맞나요?"}</div>
+    <div class="mmeta"><span class="chip gender">${s.gender}</span>${clsChip(s)}</div>
+    <div class="q">${isIn?"오늘 이미 등원 도장을 받았어요.":"우리 아이가 맞나요?"}</div>
     <div class="mbtns">
-      <button class="btn ghost" onclick="closeOv('confirmOv')">취소</button>
+      <button class="btn ghost" onclick="closeOv('confirmOv')">아니에요</button>
       ${isIn?`<button class="btn warn" onclick="record('out','kiosk')">하원 체크아웃</button>`
             :`<button class="btn primary" onclick="record('in','kiosk')">등원 체크인</button>`}
     </div>`;
@@ -332,10 +400,16 @@ async function record(type,by,student){
 }
 function showDone(rec){
   const inn=rec.type==="in", t=new Date(rec.ts);
+  const hhmm = `${t.getHours()}시 ${String(t.getMinutes()).padStart(2,"0")}분`;
   $("doneModal").innerHTML=`
-    <div class="ic ${rec.type}">${inn?"✓":"👋"}</div>
-    <h2>${rec.name} ${inn?"등원 완료!":"하원 완료"}</h2>
-    <div class="sub">${rec.cls} · ${t.getHours()}시 ${String(t.getMinutes()).padStart(2,"0")}분<br>${inn?"오늘도 즐거운 한국학교 되세요 😊":"다음 주에 만나요!"}</div>
+    <div class="stampwrap">
+      <div class="stamp ${rec.type}">
+        <div class="big">${inn?"참 잘했어요!":"안녕히 가세요!"}</div>
+        <div class="small">${inn?"등원 완료":"하원 완료"} · ${hhmm}</div>
+      </div>
+    </div>
+    <h2>${rec.name}</h2>
+    <div class="sub">${rec.cls}<br>${inn?"오늘도 즐거운 한국학교! 😊":"다음 주에 또 만나요! 👋"}</div>
     <div class="mbtns"><button class="btn primary" onclick="finishDone()">확인</button></div>`;
   $("doneOv").classList.add("show");
   clearTimeout(window._dt); window._dt=setTimeout(finishDone,3500);
@@ -347,7 +421,7 @@ function finishDone(){ closeOv("doneOv"); $("q").value=""; search(""); $("q").bl
    ============================================================ */
 function askPin(target){
   $("pinModal").innerHTML=`
-    <h2 style="font-size:20px">${target==="teacher"?"선생님":"관리자"} 확인</h2>
+    <h2 style="font-size:22px">${target==="teacher"?"선생님":"관리자"} 확인</h2>
     <div class="pinpad"><input id="pinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN"></div>
     <div class="mbtns">
       <button class="btn sm ghost" onclick="closeOv('pinOv')">취소</button>
@@ -369,7 +443,7 @@ function setMode(m){
   $("viewAdmin").style.display = m==="admin"?"flex":"none";
   $("teacherBtn").classList.toggle("active",m==="teacher");
   $("adminBtn").classList.toggle("active",m==="admin");
-  $("modeLabel").textContent = m==="kiosk"?"학생 체크인 · Check-in":(m==="teacher"?"선생님 · 반별 출석":"관리자 · 전체 현황");
+  $("modeLabel").textContent = m==="kiosk"?"어서 오세요! · Check-in":(m==="teacher"?"선생님 · 반별 출석":"관리자 · 전체 현황");
   if(m==="teacher"){ syncFromServer().then(renderTeacher); renderTeacher(); }
   if(m==="admin"){ syncFromServer().then(renderAdmin); renderAdmin(); }
 }
@@ -377,14 +451,17 @@ $("teacherBtn").onclick=()=> MODE==="teacher" ? setMode("kiosk") : askPin("teach
 $("adminBtn").onclick=()=> MODE==="admin" ? setMode("kiosk") : askPin("admin");
 
 /* ============================================================
-   선생님 — 반별 출석표 (보기/변경)
+   선생님 — 반별 출석표
    ============================================================ */
 let curCls = null;
 function renderTeacher(){
   const CLASSES=getClasses();
   if(!curCls||!CLASSES.includes(curCls)) curCls=CLASSES[0];
-  $("clsBar").innerHTML=CLASSES.map(c=>
-    `<button class="clschip ${c===curCls?"on":""}" onclick="curCls='${c.replace(/'/g,"\\'")}';renderTeacher()">${c}</button>`).join("");
+  $("clsBar").innerHTML=CLASSES.map(c=>{
+    const [bg,fg]=clsColor(c);
+    const on=c===curCls;
+    return `<button class="clschip" style="${on?`background:${fg};border-color:${fg};color:#fff`:`color:${fg};border-color:${bg};background:${bg}`}" onclick="curCls='${c.replace(/'/g,"\\'")}';renderTeacher()">${c}</button>`;
+  }).join("");
   const kids=ROSTER.filter(s=>s.cls===curCls);
   const nIn=kids.filter(s=>stateOf(s.id)==="in").length;
   const nOut=kids.filter(s=>stateOf(s.id)==="out").length;
@@ -396,8 +473,8 @@ function renderTeacher(){
   $("tList").innerHTML=kids.map(s=>{
     const st=stateOf(s.id);
     return `<div class="trow">
-      <div class="avatar ${s.gender==="여"?"f":"m"}">${s.name.replace(/\s/g,"")[0]}</div>
-      <div class="sinfo"><div class="sname">${s.name}</div></div>
+      ${avatarHtml(s)}
+      <div class="sinfo"><div class="sname jua">${s.name}</div></div>
       <div class="tstate">
         <button class="tbtn none ${st==="none"?"on":""}" onclick="tSet('${s.id.replace(/'/g,"\\'")}','none')">미등원</button>
         <button class="tbtn in ${st==="in"?"on":""}" onclick="tSet('${s.id.replace(/'/g,"\\'")}','in')">등원</button>
@@ -423,12 +500,13 @@ function renderAdmin(){
     <div class="stat"><b>${ROSTER.length-nIn-nOut}</b><span>미등원</span></div>
     <div class="stat"><b>${ROSTER.length}</b><span>전체 학생</span></div>`;
   const rows=getClasses().map(c=>{
+    const [bg,fg]=clsColor(c);
     const kids=ROSTER.filter(s=>s.cls===c);
     const cin=kids.filter(s=>stateOf(s.id)==="in");
     const cout=kids.filter(s=>stateOf(s.id)==="out");
     const none=kids.filter(s=>stateOf(s.id)==="none");
     return `<tr>
-      <td><b>${c}</b></td>
+      <td><span class="chip" style="background:${bg};color:${fg}">${c}</span></td>
       <td class="num" style="color:var(--green)">${cin.length}</td>
       <td class="num" style="color:var(--amber)">${cout.length}</td>
       <td class="num">${none.length}</td>
@@ -463,7 +541,7 @@ setInterval(()=>{
 
 /* ---------- init ---------- */
 $("schoolName").textContent=CONFIG.SCHOOL_NAME;
-$("footNote").textContent=CONFIG.SCHOOL_NAME+" 체크인 시스템";
+$("footNote").textContent=CONFIG.SCHOOL_NAME+" 체크인";
 if(!CONFIG.API_URL) $("banner").style.display="block";
 loadLocal();
 (async ()=>{
