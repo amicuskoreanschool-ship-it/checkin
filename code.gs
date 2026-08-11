@@ -13,6 +13,7 @@ const LOG_SHEET = "체크인기록";
 const LEARN_SHEET = "학습현황";
 const EXAM_SHEET = "시험성적";
 const WEEKLY_SHEET = "주간마무리";
+const REASON_SHEET = "결석사유";
 
 function ss_() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
 function tz_() { return Session.getScriptTimeZone(); }
@@ -127,7 +128,11 @@ function readTodayLog() {
   return log;
 }
 
-/* 날짜별 출석 이력 (학생별 마지막 상태) */
+/* 날짜별 출석 이력 (학생별 마지막 상태 + 첫 등원 시각) */
+function fmtTime_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, tz_(), "HH:mm:ss");
+  return String(v || "").trim();
+}
 function readAttendanceAll_(cls) {
   const values = logSheet_().getDataRange().getValues();
   const last = {};
@@ -138,8 +143,10 @@ function readAttendanceAll_(cls) {
     const date = fmtDate_(row[0]);
     const gubun = row[5];
     const key = date + "|" + row[2] + "|" + c;
-    last[key] = { date: date, name: String(row[2]), cls: c,
-      type: gubun === "등원" ? "in" : (gubun === "하원" ? "out" : "none") };
+    if (!last[key]) last[key] = { date: date, name: String(row[2]), cls: c, type: "none", inAt: "" };
+    const rec = last[key];
+    if (gubun === "등원" && !rec.inAt) rec.inAt = fmtTime_(row[1]);
+    rec.type = gubun === "등원" ? "in" : (gubun === "하원" ? "out" : "none");
   }
   return Object.keys(last).map(function(k){ return last[k]; });
 }
@@ -235,6 +242,37 @@ function setWeekly_(req) {
   return "added";
 }
 
+/* ================= 결석 사유 ================= */
+function reasonSheet_() {
+  return getOrCreate_(REASON_SHEET, ["날짜","반","이름","결석사유","기록자","수정시각"]);
+}
+function readReasons_(cls) {
+  const values = reasonSheet_().getDataRange().getValues();
+  const out = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    const c = String(row[1] || "").trim();
+    if (cls && cls !== "ALL" && c !== cls) continue;
+    out.push({ date: fmtDate_(row[0]), cls: c, name: String(row[2] || "").trim(),
+               reason: String(row[3] || "") });
+  }
+  return out;
+}
+function setReason_(req) {
+  const sh = reasonSheet_();
+  const values = sh.getDataRange().getValues();
+  const date = String(req.date), cls = String(req.cls), name = String(req.name);
+  const now = Utilities.formatDate(new Date(), tz_(), "yyyy-MM-dd HH:mm");
+  for (let r = 1; r < values.length; r++) {
+    if (fmtDate_(values[r][0]) === date && String(values[r][1]).trim() === cls && String(values[r][2]).trim() === name) {
+      sh.getRange(r+1, 4, 1, 3).setValues([[req.reason||"", req.by||"", now]]);
+      return "updated";
+    }
+  }
+  sh.appendRow([date, cls, name, req.reason||"", req.by||"", now]);
+  return "added";
+}
+
 /* ================= 웹 API ================= */
 function doGet(e) {
   const p = (e && e.parameter) || {};
@@ -253,6 +291,7 @@ function doGet(e) {
         learning: readLearning_(cls),
         exams: readExams_(cls),
         weekly: readWeekly_(cls),
+        reasons: readReasons_(cls),
         teachers: readTeachers_(),
       };
     }
@@ -283,6 +322,7 @@ function doPost(e) {
     else if (req.action === "setLearning") result = { ok: true, r: setLearning_(req) };
     else if (req.action === "setExam") result = { ok: true, r: setExam_(req) };
     else if (req.action === "setWeekly") result = { ok: true, r: setWeekly_(req) };
+    else if (req.action === "setReason") result = { ok: true, r: setReason_(req) };
     else result = { ok: false, error: "unknown action" };
   } catch (err) { result = { ok: false, error: String(err) }; }
   return ContentService.createTextOutput(JSON.stringify(result))
