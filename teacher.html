@@ -182,7 +182,14 @@ let ME = null;          // {name, cls, isAdmin}
 let P = null;           // portal data
 let VIEW = "dash";
 let FILTER = "ALL";     // admin class filter
-let LDATE = todayISO(); // learning date
+
+/* 🗓️ 가을학기: 2026-08-14부터 15주, 금요일 수업 */
+const FRIDAYS = (()=>{ const out=[]; const d=new Date(2026,7,14);
+  for(let i=0;i<15;i++){ out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`); d.setDate(d.getDate()+7); }
+  return out; })();
+const fridayLabel = iso => { const p=iso.split("-"); return `${+p[1]}/${+p[2]} (금)`; };
+function defaultFriday(){ const t=todayISO(); for(const f of FRIDAYS){ if(f>=t) return f; } return FRIDAYS[FRIDAYS.length-1]; }
+let LDATE = defaultFriday(); // 로그인한 날 기준 해당 주 금요일 자동 선택
 let TEACHERS = [];
 
 async function api(params){
@@ -230,7 +237,7 @@ function logout(){
 }
 
 /* ============ 포털 공통 ============ */
-const NAVS_T = [["dash","대시보드"],["attend","출석 체크"],["roster","명단"],["learn","학습현황"],["exam","시험 성적"],["weekly","주간마무리"]];
+const NAVS_T = [["dash","대시보드"],["roster","명단"],["attend","출석 체크"],["learn","학습현황"],["exam","시험 성적"],["weekly","주간마무리"]];
 async function enterPortal(){
   $("loginView").classList.add("hidden");
   $("portalView").classList.remove("hidden");
@@ -253,7 +260,7 @@ function myStudents(){
   if(!P) return [];
   let list = P.students;
   if(ME.isAdmin && FILTER!=="ALL") list = list.filter(s=>s.cls===FILTER);
-  return list;
+  return [...list].sort((a,b)=>a.name.localeCompare(b.name,"ko")); // ㄱㄴㄷ순
 }
 function classes(){ return [...new Set(P.students.map(s=>s.cls))]; }
 function stateOf(s){
@@ -303,7 +310,7 @@ function renderDash(){
   const list = myStudents();
   const nIn = list.filter(s=>stateOf(s)==="in").length;
   const nOut = list.filter(s=>stateOf(s)==="out").length;
-  const today = todayISO();
+  const today = LDATE; // 이번 주 수업일(금요일) 기준
   const lrn = list.map(s=>learnOf(s,today));
   const hwDone = lrn.filter(l=>l.hw==="O").length;
   const dictDone = lrn.filter(l=>l.dict!=="").length;
@@ -313,8 +320,8 @@ function renderDash(){
     <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
     <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
     <div class="stat"><b>${list.length-nIn-nOut}</b><span>미등원</span></div>
-    <div class="stat"><b style="color:var(--blue)">${hwDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>오늘 숙제 완료</span></div>
-    <div class="stat"><b style="color:#6C4FC4">${dictDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>받아쓰기 입력</span></div>
+    <div class="stat"><b style="color:var(--blue)">${hwDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>이번 주 숙제 완료</span></div>
+    <div class="stat"><b style="color:#6C4FC4">${dictDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>이번 주 받아쓰기</span></div>
   </div>`;
   if(ME.isAdmin && FILTER==="ALL"){
     html += `<div class="card"><h3>반별 현황 <span class="live">● LIVE</span> <span class="muted">${now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})} 업데이트</span></h3>
@@ -390,11 +397,12 @@ function renderRoster(){
   const list = myStudents();
   let html = `<div class="card"><h3>학생 명단 <span class="muted">${list.length}명 · 수정하면 구글 시트에 바로 반영됩니다</span></h3>
   <div style="overflow-x:auto"><table>
-  <tr><th>이름</th><th>영어이름</th>${ME.isAdmin?"<th>반</th>":""}<th>학년</th><th>생년월일</th><th>부모님</th><th>연락처</th><th>이메일</th><th>알러지</th><th></th></tr>`;
+  <tr><th>이름</th><th>영어이름</th><th>성별</th>${ME.isAdmin?"<th>반</th>":""}<th>학년</th><th>생년월일</th><th>부모님</th><th>연락처</th><th>이메일</th><th>알러지</th><th></th></tr>`;
   list.forEach(s=>{
     html += `<tr>
       <td><b class="jua" style="font-size:15px">${esc(s.name)}</b></td>
       <td>${esc(s.eng)}</td>
+      <td><span class="chip" style="background:${genderColor(s.gender)[0]};color:${genderColor(s.gender)[1]}">${esc(s.gender)||"—"}</span></td>
       ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
       <td>${esc(s.grade)}</td><td style="white-space:nowrap">${esc(s.birth)}</td>
       <td>${esc(s.parent)}</td><td style="white-space:nowrap">${esc(s.phone)}</td>
@@ -433,8 +441,10 @@ async function saveEdit(row){
 function renderLearn(){
   const list = myStudents();
   let html = `<div class="card"><h3>학습현황 — 숙제 · 받아쓰기
-    <input type="date" id="ldate" value="${LDATE}" onchange="LDATE=this.value;render()" style="margin-left:6px">
-    <span class="muted">날짜를 골라 그날 기록을 입력하세요 · 입력 즉시 저장</span></h3>
+    <select id="ldate" onchange="LDATE=this.value;render()" style="margin-left:6px;font-family:'Jua'">
+      ${FRIDAYS.map(f=>`<option value="${f}" ${f===LDATE?"selected":""}>${fridayLabel(f)}</option>`).join("")}
+    </select>
+    <span class="muted">🗓️ 가을학기: 8/14 – 11/20 (15주) · 수업일(금요일)만 선택 가능 · 입력 즉시 저장</span></h3>
   <table><tr><th>이름</th>${ME.isAdmin?"<th>반</th>":""}<th>숙제</th><th>받아쓰기 점수</th><th></th></tr>`;
   list.forEach((s,i)=>{
     const l = learnOf(s, LDATE);
@@ -451,22 +461,20 @@ function renderLearn(){
     </tr>`;
   });
   html += `</table></div>`;
-  /* 전체 기록 매트릭스 */
-  const dates = [...new Set(P.learning.filter(l=>ME.isAdmin?(FILTER==="ALL"||l.cls===FILTER):l.cls===ME.cls).map(l=>l.date))].sort().reverse().slice(0,8);
-  if(dates.length){
-    html += `<div class="card"><h3>전체 기록 <span class="muted">최근 ${dates.length}일 · 숙제/받아쓰기</span></h3>
-    <div style="overflow-x:auto"><table><tr><th>이름</th>${dates.map(d=>`<th>${d.slice(5)}</th>`).join("")}</tr>`;
-    list.forEach(s=>{
-      html += `<tr><td><b class="jua">${esc(s.name)}</b></td>`;
-      dates.forEach(d=>{
-        const l = learnOf(s,d);
-        const hw = l.hw==="O"?"🟢":l.hw==="X"?"🔴":"·";
-        html += `<td style="white-space:nowrap">${hw} ${l.dict!==""?`<b>${esc(l.dict)}</b>`:""}</td>`;
-      });
-      html += `</tr>`;
+  /* 전체 기록 — 학기 금요일 15주 전체 */
+  html += `<div class="card"><h3>전체 기록 <span class="muted">가을학기 15주 전체 · 🟢 숙제O · 🔴 숙제X · 숫자=받아쓰기</span></h3>
+  <div style="overflow-x:auto"><table><tr><th>이름</th>${FRIDAYS.map(d=>`<th style="${d===LDATE?"color:var(--orange-deep)":""}">${d.slice(5).replace("-","/")}</th>`).join("")}</tr>`;
+  list.forEach(s=>{
+    html += `<tr><td style="white-space:nowrap"><b class="jua">${esc(s.name)}</b></td>`;
+    FRIDAYS.forEach(d=>{
+      const l = P.learning.find(x=>x.date===d && x.cls===s.cls && x.name===s.name);
+      const hw = l && l.hw==="O" ? "🟢" : l && l.hw==="X" ? "🔴" : "";
+      const dict = l && l.dict!=="" ? `<b>${esc(l.dict)}</b>` : "";
+      html += `<td style="white-space:nowrap">${hw||dict?`${hw} ${dict}`:""}</td>`;
     });
-    html += `</table></div></div>`;
-  }
+    html += `</tr>`;
+  });
+  html += `</table></div></div>`;
   $("viewBox").innerHTML = html;
 }
 async function setHW(i,val){
@@ -523,7 +531,7 @@ async function setExamRow(i){
 /* ============ 주간 마무리 ============ */
 function renderWeekly(){
   const isAdmin = ME.isAdmin;
-  const today = todayISO();
+  const today = defaultFriday(); // 이번 주 수업일(금요일) 기준
   let html = "";
   if(!isAdmin){
     const mine = P.weekly.find(w=>w.date===today && w.cls===ME.cls);
@@ -553,7 +561,7 @@ function renderWeekly(){
 async function submitWeekly(none){
   const note = none ? "없음" : $("wknote").value.trim();
   if(!none && !note){ alert("내용을 입력하시거나 '특이사항 없음'을 눌러주세요"); return; }
-  const res = await post({action:"setWeekly", date:todayISO(), cls:ME.cls, teacher:ME.name, note});
+  const res = await post({action:"setWeekly", date:defaultFriday(), cls:ME.cls, teacher:ME.name, note});
   if(res.ok){ await refresh(false); go("weekly"); }
 }
 
