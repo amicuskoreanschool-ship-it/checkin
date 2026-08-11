@@ -406,18 +406,31 @@ function renderAttend(){
   const list = myStudents();
   const nIn = list.filter(s=>stateOf(s)==="in").length;
   const nOut = list.filter(s=>stateOf(s)==="out").length;
+  const today = todayISO();
+  const nLate = list.filter(s=>{
+    const r = attRec(s, today);
+    return r && r.type!=="none" && isLate(r.inAt, s.cls);
+  }).length;
   let html = `
   <div class="stats">
     <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
     <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
+    <div class="stat"><b style="color:var(--red)">${nLate}</b><span>지각</span></div>
     <div class="stat"><b>${list.length-nIn-nOut}</b><span>미등원</span></div>
     <div class="stat"><b>${list.length}</b><span>전체</span></div>
   </div>`;
   html += list.map((s,i)=>{
     const st = stateOf(s);
+    const rec = attRec(s, today);
+    const inTime = rec && rec.inAt ? rec.inAt.slice(0,5) : "";
+    const timeChip = (st==="none" || !inTime) ? "" :
+      (isLate(rec.inAt, s.cls)
+        ? `<span class="chip" style="background:var(--red-bg);color:var(--red);font-weight:800">지각 · ${inTime} 등원</span>`
+        : `<span class="chip" style="background:var(--green-bg);color:var(--green);font-weight:800">✓ ${inTime} 등원</span>`);
     return `<div class="arow">
       ${gAvatar(s,46,20)}
       <span class="nm">${esc(s.name)}</span>
+      ${timeChip}
       ${ME.isAdmin?clsChip(s.cls):""}
       <button class="abtn none ${st==="none"?"on":""}" onclick="aSet(${i},'none')">미등원</button>
       <input class="rsn" id="rsn_${i}" type="text" placeholder="결석 사유" maxlength="40"
