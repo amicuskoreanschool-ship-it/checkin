@@ -43,9 +43,9 @@
   .htitle{flex:1;min-width:0}
   .htitle h1{font-family:"Jua";font-size:21px;font-weight:400;letter-spacing:-.2px}
   .htitle p{font-size:12.5px;color:var(--ink3);margin-top:1px}
-  .clock{text-align:right}
-  .clock .date{font-size:12.5px;color:var(--ink2)}
-  .clock .time{font-family:"Jua";font-size:22px;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .kclock{display:flex;flex-direction:column;align-items:center;gap:1px;margin-bottom:12px}
+  .kclock .kd{font-size:14px;color:var(--ink2);font-weight:600}
+  .kclock .kt{font-family:"Jua";font-size:36px;font-variant-numeric:tabular-nums;color:var(--ink)}
   .hbtn{
     border:none;background:#fff;font-size:13.5px;font-weight:700;color:var(--ink2);
     padding:10px 15px;border-radius:99px;cursor:pointer;font-family:inherit;
@@ -193,10 +193,6 @@
     <h1 id="schoolName">아미쿠스 한국학교</h1>
     <p id="modeLabel">어서 오세요! · Check-in</p>
   </div>
-  <div class="clock">
-    <div class="date" id="dateNow"></div>
-    <div class="time" id="timeNow">--:--</div>
-  </div>
   <button class="hbtn" id="teacherBtn">선생님</button>
   <button class="hbtn" id="adminBtn">관리자</button>
 </header>
@@ -208,9 +204,10 @@
 
   <!-- ============ 학부모 키오스크 ============ -->
   <div class="stage" id="viewKiosk">
+    <div class="kclock"><span class="kd" id="dateNow"></span><span class="kt" id="timeNow">--:--</span></div>
     <div class="prompt">우리 아이 이름을 찾아주세요!<small>이름 일부 또는 초성(ㄱㄴㄷ)으로도 검색됩니다</small></div>
     <div class="searchbox">
-      <input id="q" type="text" placeholder="예: 김사랑 또는 ㄱㅅㄹ" autocomplete="off">
+      <input id="q" type="text" placeholder="예: 홍길동" autocomplete="off">
       <span class="sicon" id="sicon">🔍</span>
       <button id="clearBtn">✕</button>
     </div>
@@ -235,7 +232,7 @@
   </div>
 </main>
 
-<footer id="footNote">아미쿠스 한국학교 체크인</footer>
+<footer id="footNote">아미쿠스 한국학교 체크인 · <a href="teacher.html" style="color:var(--ink3)">선생님 포털</a></footer>
 
 <div class="overlay" id="confirmOv"><div class="modal" id="confirmModal"></div></div>
 <div class="overlay" id="doneOv"><div class="modal done" id="doneModal"></div></div>
@@ -541,7 +538,7 @@ setInterval(()=>{
 
 /* ---------- init ---------- */
 $("schoolName").textContent=CONFIG.SCHOOL_NAME;
-$("footNote").textContent=CONFIG.SCHOOL_NAME+" 체크인";
+/* footer는 HTML에 고정 (선생님 포털 링크 유지) */
 if(!CONFIG.API_URL) $("banner").style.display="block";
 loadLocal();
 (async ()=>{

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아미쿠스 한국학교 · 선생님 포털</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --cream:#FFF6EA; --paper:#FFFFFF;
+    --ink:#43352A; --ink2:#7A6A5C; --ink3:#B3A395;
+    --line:#F0E2D2; --line-soft:#F7EDE0;
+    --orange:#FF8A3D; --orange-deep:#F26B1D; --orange-bg:#FFEFE0;
+    --green:#3FA765; --green-bg:#E6F6EC;
+    --amber:#C98A0C; --amber-bg:#FFF3D6;
+    --red:#DE4B32; --red-bg:#FDECE8;
+    --blue:#5BA8E5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:"Pretendard Variable","Pretendard","Apple SD Gothic Neo",sans-serif;
+    background:var(--cream);color:var(--ink);min-height:100vh}
+  .jua{font-family:"Jua",sans-serif;font-weight:400}
+  /* header */
+  header{padding:14px 22px;display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+  .logo{width:44px;height:44px;border-radius:14px;background:var(--orange);display:flex;
+    align-items:center;justify-content:center;color:#fff;font-family:"Jua";font-size:22px;
+    transform:rotate(-6deg);box-shadow:0 4px 0 rgba(242,107,29,.25);flex:none}
+  .htitle h1{font-family:"Jua";font-size:19px;font-weight:400}
+  .htitle p{font-size:12px;color:var(--ink3)}
+  .hspace{flex:1}
+  .me{font-size:13.5px;font-weight:700;color:var(--ink2);background:#fff;border:1.5px solid var(--line);
+    padding:8px 14px;border-radius:99px}
+  .hbtn{border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:700;color:var(--ink2);
+    padding:8px 13px;border-radius:99px;cursor:pointer;font-family:inherit}
+  /* nav */
+  nav{display:flex;gap:8px;padding:4px 22px 12px;overflow-x:auto}
+  .navbtn{flex:none;border:2px solid var(--line);background:#fff;border-radius:99px;
+    padding:10px 18px;font-family:"Jua";font-size:15px;color:var(--ink2);cursor:pointer}
+  .navbtn.on{background:var(--orange);border-color:var(--orange);color:#fff}
+  main{padding:6px 22px 40px;max-width:1080px;margin:0 auto}
+  .hidden{display:none!important}
+  /* cards */
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{flex:1;min-width:110px;background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:14px 16px}
+  .stat b{display:block;font-family:"Jua";font-size:28px;font-weight:400}
+  .stat span{font-size:12.5px;color:var(--ink3);font-weight:600}
+  .card{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+  .card h3{font-family:"Jua";font-size:17px;font-weight:400;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .live{font-size:11px;background:var(--green-bg);color:var(--green);border-radius:99px;padding:3px 9px;font-weight:800}
+  .muted{font-size:12px;color:var(--ink3);font-weight:500}
+  /* table */
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+  th{background:var(--line-soft);text-align:left;padding:9px 11px;font-size:12px;color:var(--ink2);white-space:nowrap}
+  th:first-child{border-radius:10px 0 0 10px} th:last-child{border-radius:0 10px 10px 0}
+  td{padding:9px 11px;border-bottom:1.5px solid var(--line-soft);vertical-align:middle}
+  .chip{font-size:12.5px;padding:3px 10px;border-radius:99px;font-weight:700;white-space:nowrap;display:inline-block}
+  .badge-in{background:var(--green-bg);color:var(--green)}
+  .badge-out{background:var(--amber-bg);color:var(--amber)}
+  .badge-none{background:var(--line-soft);color:var(--ink3)}
+  .badge-ok{background:var(--green-bg);color:var(--green)}
+  .badge-no{background:var(--red-bg);color:var(--red)}
+  /* inputs */
+  input[type=text],input[type=number],input[type=date],input[type=email],select,textarea{
+    font-family:inherit;font-size:14.5px;color:var(--ink);
+    border:2px solid var(--line);border-radius:12px;padding:9px 12px;outline:none;background:#fff}
+  input:focus,select:focus,textarea:focus{border-color:var(--orange)}
+  input.tiny{width:74px;text-align:center}
+  .btn{border:none;border-radius:14px;padding:12px 20px;font-size:15px;font-weight:800;
+    cursor:pointer;font-family:inherit}
+  .btn.primary{background:var(--orange);color:#fff;box-shadow:0 3px 0 rgba(242,107,29,.3)}
+  .btn.primary:active{transform:translateY(2px);box-shadow:none}
+  .btn.ghost{background:var(--line-soft);color:var(--ink2)}
+  .btn.small{padding:8px 14px;font-size:13px;border-radius:11px}
+  .hwbtn{border:2px solid var(--line);background:#fff;border-radius:10px;padding:7px 12px;
+    font-weight:800;font-size:13px;color:var(--ink3);cursor:pointer;font-family:inherit}
+  .hwbtn.O.on{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+  .hwbtn.X.on{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+  .savemark{font-size:12px;color:var(--green);font-weight:800;opacity:0;transition:opacity .3s}
+  .savemark.show{opacity:1}
+  /* class filter chips */
+  .clsbar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 14px}
+  .clschip{flex:none;border:2px solid var(--line);background:#fff;border-radius:99px;
+    padding:8px 14px;font-family:"Jua";font-size:14px;color:var(--ink2);cursor:pointer}
+  /* login */
+  #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .loginbox{background:var(--paper);border:2px solid var(--line);border-radius:26px;
+    padding:36px 30px;width:100%;max-width:420px;text-align:center}
+  .loginbox .logo{margin:0 auto 14px;width:60px;height:60px;font-size:30px;border-radius:18px}
+  .loginbox h2{font-family:"Jua";font-size:24px;font-weight:400}
+  .loginbox p{font-size:13.5px;color:var(--ink3);margin-top:4px}
+  .loginbox select,.loginbox input{width:100%;height:54px;margin-top:14px;font-size:16px}
+  .loginbox .btn{width:100%;height:56px;margin-top:16px;font-size:17px}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(67,53,42,.42);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:var(--paper);border-radius:24px;max-width:480px;width:100%;
+    padding:26px 24px;max-height:90vh;overflow-y:auto}
+  .modal h2{font-family:"Jua";font-size:21px;font-weight:400;margin-bottom:14px}
+  .field{margin-bottom:11px;text-align:left}
+  .field label{display:block;font-size:12px;font-weight:800;color:var(--ink2);margin-bottom:5px}
+  .field input{width:100%}
+  .mbtns{display:flex;gap:9px;margin-top:16px}
+  .mbtns .btn{flex:1}
+  footer{text-align:center;font-size:11.5px;color:var(--ink3);padding:12px}
+  @media(max-width:640px){ td,th{padding:7px 7px;font-size:13px} main{padding:6px 12px 30px} }
+</style>
+</head>
+<body>
+
+<!-- ============ 로그인 ============ -->
+<div id="loginView">
+  <div class="loginbox">
+    <div class="logo">한</div>
+    <h2>선생님 포털</h2>
+    <p>아미쿠스 한국학교 · 이름을 선택해 주세요</p>
+    <select id="loginWho"><option>불러오는 중...</option></select>
+    <input id="loginPin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN 번호">
+    <button class="btn primary" onclick="login()">들어가기</button>
+    <p id="loginMsg" style="color:var(--red);font-weight:700;margin-top:10px"></p>
+  </div>
+</div>
+
+<!-- ============ 포털 ============ -->
+<div id="portalView" class="hidden">
+  <header>
+    <div class="logo">한</div>
+    <div class="htitle">
+      <h1>아미쿠스 한국학교</h1>
+      <p id="subLabel">선생님 포털</p>
+    </div>
+    <div class="hspace"></div>
+    <span class="me" id="meLabel"></span>
+    <button class="hbtn" onclick="logout()">나가기</button>
+  </header>
+  <nav id="navBar"></nav>
+  <main>
+    <div id="clsFilterWrap" class="clsbar hidden"></div>
+    <div id="viewBox"></div>
+  </main>
+</div>
+
+<footer>아미쿠스 한국학교 · <a href="index.html" style="color:var(--ink3)">체크인 키오스크</a></footer>
+<div class="overlay" id="editOv"><div class="modal" id="editModal"></div></div>
+
+<script>
+const CONFIG = {
+  API_URL: "https://script.google.com/macros/s/AKfycbziGOuwT-o0_IIGCxRvMVN069lWvTzjElM-4Le2s95HRA1N2rj-I5qB71XwZ6iTu9gH/exec",
+  TEACHER_PIN: "1111",
+  ADMIN_PIN: "2026",
+  SYNC_SEC: 30,
+};
+const $ = id => document.getElementById(id);
+const CLS_COLORS = {
+  "가람":["#E3F0FE","#2E6FBB"],"누리":["#EFE7FD","#6C4FC4"],"다솜":["#FDE7EF","#D14D84"],
+  "마루":["#E4F6F9","#1F8CA8"],"슬기":["#E8F6E3","#3E9142"],"아름":["#FFF3D6","#C98A0C"],
+  "자비":["#E2F5F0","#1F9077"],"파도":["#E3ECFB","#3757B8"],"하늘":["#E0F2FF","#2B8FD8"],
+};
+const clsColor = c => { const k=Object.keys(CLS_COLORS).find(k=>(c||"").startsWith(k)); return k?CLS_COLORS[k]:["#F3EBE0","#8A6D4F"]; };
+const clsChip = c => `<span class="chip" style="background:${clsColor(c)[0]};color:${clsColor(c)[1]}">${c}</span>`;
+const esc = s => String(s??"").replace(/</g,"&lt;");
+const todayISO = () => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
+
+let ME = null;          // {name, cls, isAdmin}
+let P = null;           // portal data
+let VIEW = "dash";
+let FILTER = "ALL";     // admin class filter
+let LDATE = todayISO(); // learning date
+let TEACHERS = [];
+
+async function api(params){
+  const r = await fetch(CONFIG.API_URL + "?" + new URLSearchParams(params));
+  return r.json();
+}
+async function post(body){
+  const r = await fetch(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+  return r.json();
+}
+
+/* ============ 로그인 ============ */
+async function initLogin(){
+  try{
+    const d = await api({action:"teachers"});
+    TEACHERS = (d.teachers||[]);
+    const seen = {};
+    const opts = TEACHERS.filter(t=>{ const k=t.name+"|"+t.cls; if(seen[k]) return false; seen[k]=1; return true; })
+      .map((t,i)=>`<option value="${i}">${esc(t.name)} — ${esc(t.cls)}</option>`).join("");
+    $("loginWho").innerHTML = `<option value="">이름을 선택하세요...</option>` + opts +
+      `<option value="ADMIN">관리자 (교장선생님)</option>`;
+  }catch(e){ $("loginWho").innerHTML = `<option value="">명단을 불러오지 못했어요</option>`; }
+  try{
+    const saved = JSON.parse(localStorage.getItem("kt_me")||"null");
+    if(saved){ ME=saved; enterPortal(); }
+  }catch(e){}
+}
+function login(){
+  const v = $("loginWho").value, pin = $("loginPin").value;
+  if(v===""){ $("loginMsg").textContent="이름을 선택해 주세요"; return; }
+  if(v==="ADMIN"){
+    if(pin!==CONFIG.ADMIN_PIN){ $("loginMsg").textContent="PIN이 틀렸어요"; return; }
+    ME = {name:"관리자", cls:"ALL", isAdmin:true};
+  }else{
+    if(pin!==CONFIG.TEACHER_PIN){ $("loginMsg").textContent="PIN이 틀렸어요"; return; }
+    const t = TEACHERS[Number(v)];
+    ME = {name:t.name, cls:t.cls, isAdmin:false};
+  }
+  try{ localStorage.setItem("kt_me", JSON.stringify(ME)); }catch(e){}
+  enterPortal();
+}
+function logout(){
+  try{ localStorage.removeItem("kt_me"); }catch(e){}
+  location.reload();
+}
+
+/* ============ 포털 공통 ============ */
+const NAVS_T = [["dash","대시보드"],["roster","명단"],["learn","학습현황"],["exam","시험 성적"],["weekly","주간마무리"]];
+async function enterPortal(){
+  $("loginView").classList.add("hidden");
+  $("portalView").classList.remove("hidden");
+  $("meLabel").textContent = ME.isAdmin ? "관리자" : `${ME.name} · ${ME.cls}`;
+  $("subLabel").textContent = ME.isAdmin ? "관리자 포털" : "선생님 포털";
+  $("navBar").innerHTML = NAVS_T.map(([k,label])=>
+    `<button class="navbtn ${k===VIEW?"on":""}" data-v="${k}" onclick="go('${k}')">${label}</button>`).join("");
+  await refresh(true);
+  setInterval(()=>{ refresh(false); }, CONFIG.SYNC_SEC*1000);
+}
+function go(v){ VIEW=v; document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); render(); }
+async function refresh(showLoading){
+  if(showLoading) $("viewBox").innerHTML = `<div class="card"><h3>불러오는 중...</h3></div>`;
+  try{
+    const d = await api({action:"portal", cls: ME.isAdmin ? "ALL" : ME.cls});
+    if(d.ok){ P = d; render(); }
+  }catch(e){ console.warn(e); }
+}
+function myStudents(){
+  if(!P) return [];
+  let list = P.students;
+  if(ME.isAdmin && FILTER!=="ALL") list = list.filter(s=>s.cls===FILTER);
+  return list;
+}
+function classes(){ return [...new Set(P.students.map(s=>s.cls))]; }
+function stateOf(s){
+  let last=null;
+  for(const r of P.log) if(r.id===s.name+"|"+s.cls) last=r;
+  return last?last.type:"none";
+}
+function learnOf(s, date){
+  return P.learning.find(l=>l.date===date && l.cls===s.cls && l.name===s.name) || {hw:"",dict:""};
+}
+function examOf(s){
+  return P.exams.find(x=>x.cls===s.cls && x.name===s.name) || {mid:"",fin:""};
+}
+function age(birth){
+  const m = String(birth).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(!m) return "";
+  const b = new Date(+m[3], +m[1]-1, +m[2]), n = new Date();
+  let a = n.getFullYear()-b.getFullYear();
+  if(n.getMonth()<b.getMonth() || (n.getMonth()===b.getMonth() && n.getDate()<b.getDate())) a--;
+  return a+"세";
+}
+function renderFilter(){
+  const wrap = $("clsFilterWrap");
+  if(!ME.isAdmin){ wrap.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  const chips = ["ALL",...classes()];
+  wrap.innerHTML = chips.map(c=>{
+    const on = c===FILTER;
+    const [bg,fg] = c==="ALL"?["#43352A","#fff"]:clsColor(c);
+    return `<button class="clschip" style="${on?`background:${c==="ALL"?"#43352A":fg};border-color:${c==="ALL"?"#43352A":fg};color:#fff`:`background:${c==="ALL"?"#fff":bg};color:${c==="ALL"?"#43352A":fg};border-color:${c==="ALL"?"var(--line)":bg}`}"
+      onclick="FILTER='${c}';render()">${c==="ALL"?"전체":c}</button>`;
+  }).join("");
+}
+function render(){
+  if(!P) return;
+  renderFilter();
+  if(VIEW==="dash") renderDash();
+  else if(VIEW==="roster") renderRoster();
+  else if(VIEW==="learn") renderLearn();
+  else if(VIEW==="exam") renderExam();
+  else if(VIEW==="weekly") renderWeekly();
+}
+
+/* ============ 대시보드 ============ */
+function renderDash(){
+  const list = myStudents();
+  const nIn = list.filter(s=>stateOf(s)==="in").length;
+  const nOut = list.filter(s=>stateOf(s)==="out").length;
+  const today = todayISO();
+  const lrn = list.map(s=>learnOf(s,today));
+  const hwDone = lrn.filter(l=>l.hw==="O").length;
+  const dictDone = lrn.filter(l=>l.dict!=="").length;
+  const now = new Date();
+  let html = `
+  <div class="stats">
+    <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
+    <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
+    <div class="stat"><b>${list.length-nIn-nOut}</b><span>미등원</span></div>
+    <div class="stat"><b style="color:var(--blue)">${hwDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>오늘 숙제 완료</span></div>
+    <div class="stat"><b style="color:#6C4FC4">${dictDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>받아쓰기 입력</span></div>
+  </div>`;
+  if(ME.isAdmin && FILTER==="ALL"){
+    html += `<div class="card"><h3>반별 현황 <span class="live">● LIVE</span> <span class="muted">${now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})} 업데이트</span></h3>
+    <table><tr><th>반</th><th>등원</th><th>하원</th><th>미등원</th><th>숙제완료</th><th>받아쓰기</th><th>주간마무리</th></tr>`;
+    classes().forEach(c=>{
+      const kids = P.students.filter(s=>s.cls===c);
+      const cin = kids.filter(s=>stateOf(s)==="in").length;
+      const cout = kids.filter(s=>stateOf(s)==="out").length;
+      const chw = kids.filter(s=>learnOf(s,today).hw==="O").length;
+      const cdict = kids.filter(s=>learnOf(s,today).dict!=="").length;
+      const wk = P.weekly.find(w=>w.date===today && w.cls===c);
+      html += `<tr><td>${clsChip(c)}</td>
+        <td style="color:var(--green);font-weight:800">${cin}</td>
+        <td style="color:var(--amber);font-weight:800">${cout}</td>
+        <td>${kids.length-cin-cout}</td>
+        <td>${chw}/${kids.length}</td><td>${cdict}/${kids.length}</td>
+        <td>${wk?`<span class="chip badge-ok">제출</span>`:`<span class="chip badge-none">미제출</span>`}</td></tr>`;
+    });
+    html += `</table></div>`;
+  }
+  html += `<div class="card"><h3>학생 현황 <span class="live">● LIVE</span> <span class="muted">${CONFIG.SYNC_SEC}초마다 자동 업데이트</span></h3>
+  <table><tr><th>이름</th>${ME.isAdmin?"<th>반</th>":""}<th>출석</th><th>오늘 숙제</th><th>받아쓰기</th><th>알러지</th></tr>`;
+  list.forEach(s=>{
+    const st = stateOf(s), l = learnOf(s,today);
+    html += `<tr>
+      <td><b class="jua" style="font-size:15px">${esc(s.name)}</b> <span class="muted">${esc(s.eng)}</span></td>
+      ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
+      <td>${st==="in"?`<span class="chip badge-in">✓ 등원</span>`:st==="out"?`<span class="chip badge-out">하원</span>`:`<span class="chip badge-none">미등원</span>`}</td>
+      <td>${l.hw==="O"?`<span class="chip badge-ok">O</span>`:l.hw==="X"?`<span class="chip badge-no">X</span>`:`<span class="chip badge-none">—</span>`}</td>
+      <td>${l.dict!==""?`<b>${esc(l.dict)}</b>점`:`<span class="muted">—</span>`}</td>
+      <td>${s.allergy?`<span class="chip badge-no">⚠ ${esc(s.allergy)}</span>`:`<span class="muted">—</span>`}</td>
+    </tr>`;
+  });
+  html += `</table></div>`;
+  $("viewBox").innerHTML = html;
+}
+
+/* ============ 명단 ============ */
+function renderRoster(){
+  const list = myStudents();
+  let html = `<div class="card"><h3>학생 명단 <span class="muted">${list.length}명 · 수정하면 구글 시트에 바로 반영됩니다</span></h3>
+  <div style="overflow-x:auto"><table>
+  <tr><th>이름</th><th>영어이름</th>${ME.isAdmin?"<th>반</th>":""}<th>학년</th><th>나이</th><th>부모님</th><th>연락처</th><th>이메일</th><th>알러지</th><th></th></tr>`;
+  list.forEach(s=>{
+    html += `<tr>
+      <td><b class="jua" style="font-size:15px">${esc(s.name)}</b></td>
+      <td>${esc(s.eng)}</td>
+      ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
+      <td>${esc(s.grade)}</td><td>${age(s.birth)}</td>
+      <td>${esc(s.parent)}</td><td style="white-space:nowrap">${esc(s.phone)}</td>
+      <td style="font-size:12.5px">${esc(s.email)}</td>
+      <td>${s.allergy?`<span class="chip badge-no">${esc(s.allergy)}</span>`:"—"}</td>
+      <td><button class="btn ghost small" onclick="openEdit(${s.row})">수정</button></td>
+    </tr>`;
+  });
+  html += `</table></div></div>`;
+  $("viewBox").innerHTML = html;
+}
+function openEdit(row){
+  const s = P.students.find(x=>x.row===row); if(!s) return;
+  const f = (k,label,val,type="text") => `<div class="field"><label>${label}</label><input id="ef_${k}" type="${type}" value="${esc(val)}"></div>`;
+  $("editModal").innerHTML = `<h2>${esc(s.name)} 정보 수정</h2>
+    ${f("name","한글이름",s.name)}${f("eng","영어이름",s.eng)}
+    ${f("birth","생년월일 (예: 3/24/2015)",s.birth)}${f("grade","학년",s.grade)}
+    ${f("parent","부모님 성함",s.parent)}${f("phone","연락처",s.phone)}
+    ${f("email","이메일",s.email,"email")}${f("allergy","알러지 (없으면 비워두세요)",s.allergy)}
+    <div class="mbtns">
+      <button class="btn ghost" onclick="$('editOv').classList.remove('show')">취소</button>
+      <button class="btn primary" onclick="saveEdit(${row})">저장</button>
+    </div>`;
+  $("editOv").classList.add("show");
+}
+async function saveEdit(row){
+  const g = k => $("ef_"+k).value.trim();
+  const fields = {name:g("name"),eng:g("eng"),birth:g("birth"),grade:g("grade"),
+                  parent:g("parent"),phone:g("phone"),email:g("email"),allergy:g("allergy")};
+  $("editOv").classList.remove("show");
+  const res = await post({action:"updateStudent", row, fields});
+  if(res.ok){ await refresh(false); } else alert("저장 실패: "+res.error);
+}
+
+/* ============ 학습현황 ============ */
+function renderLearn(){
+  const list = myStudents();
+  let html = `<div class="card"><h3>학습현황 — 숙제 · 받아쓰기
+    <input type="date" id="ldate" value="${LDATE}" onchange="LDATE=this.value;render()" style="margin-left:6px">
+    <span class="muted">날짜를 골라 그날 기록을 입력하세요 · 입력 즉시 저장</span></h3>
+  <table><tr><th>이름</th>${ME.isAdmin?"<th>반</th>":""}<th>숙제</th><th>받아쓰기 점수</th><th></th></tr>`;
+  list.forEach((s,i)=>{
+    const l = learnOf(s, LDATE);
+    html += `<tr>
+      <td><b class="jua" style="font-size:15px">${esc(s.name)}</b></td>
+      ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
+      <td>
+        <button class="hwbtn O ${l.hw==="O"?"on":""}" onclick="setHW(${i},'O')">O 했어요</button>
+        <button class="hwbtn X ${l.hw==="X"?"on":""}" onclick="setHW(${i},'X')">X 안했어요</button>
+      </td>
+      <td><input class="tiny" type="number" min="0" max="100" id="dict_${i}" value="${esc(l.dict)}" placeholder="—"
+           onchange="setDict(${i})"> 점</td>
+      <td><span class="savemark" id="sv_${i}">저장됨 ✓</span></td>
+    </tr>`;
+  });
+  html += `</table></div>`;
+  /* 전체 기록 매트릭스 */
+  const dates = [...new Set(P.learning.filter(l=>ME.isAdmin?(FILTER==="ALL"||l.cls===FILTER):l.cls===ME.cls).map(l=>l.date))].sort().reverse().slice(0,8);
+  if(dates.length){
+    html += `<div class="card"><h3>전체 기록 <span class="muted">최근 ${dates.length}일 · 숙제/받아쓰기</span></h3>
+    <div style="overflow-x:auto"><table><tr><th>이름</th>${dates.map(d=>`<th>${d.slice(5)}</th>`).join("")}</tr>`;
+    list.forEach(s=>{
+      html += `<tr><td><b class="jua">${esc(s.name)}</b></td>`;
+      dates.forEach(d=>{
+        const l = learnOf(s,d);
+        const hw = l.hw==="O"?"🟢":l.hw==="X"?"🔴":"·";
+        html += `<td style="white-space:nowrap">${hw} ${l.dict!==""?`<b>${esc(l.dict)}</b>`:""}</td>`;
+      });
+      html += `</tr>`;
+    });
+    html += `</table></div></div>`;
+  }
+  $("viewBox").innerHTML = html;
+}
+async function setHW(i,val){
+  const s = myStudents()[i];
+  const l = learnOf(s, LDATE);
+  const hw = l.hw===val ? "" : val;
+  upsertLocalLearn(s, {hw});
+  render();
+  await post({action:"setLearning", date:LDATE, cls:s.cls, name:s.name, hw, dict:learnOf(s,LDATE).dict, by:ME.name});
+  mark(i);
+}
+async function setDict(i){
+  const s = myStudents()[i];
+  const v = $("dict_"+i).value;
+  upsertLocalLearn(s, {dict:v});
+  await post({action:"setLearning", date:LDATE, cls:s.cls, name:s.name, hw:learnOf(s,LDATE).hw, dict:v, by:ME.name});
+  mark(i);
+}
+function upsertLocalLearn(s, patch){
+  let l = P.learning.find(x=>x.date===LDATE && x.cls===s.cls && x.name===s.name);
+  if(!l){ l={date:LDATE,cls:s.cls,name:s.name,hw:"",dict:""}; P.learning.push(l); }
+  Object.assign(l, patch);
+}
+function mark(i){ const el=$("sv_"+i); if(!el) return; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1600); }
+
+/* ============ 시험 성적 ============ */
+function renderExam(){
+  const list = myStudents();
+  let html = `<div class="card"><h3>시험 성적 <span class="muted">중간 · 기말 — 입력 즉시 저장</span></h3>
+  <table><tr><th>이름</th>${ME.isAdmin?"<th>반</th>":""}<th>중간시험</th><th>기말시험</th><th></th></tr>`;
+  list.forEach((s,i)=>{
+    const x = examOf(s);
+    html += `<tr>
+      <td><b class="jua" style="font-size:15px">${esc(s.name)}</b></td>
+      ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
+      <td><input class="tiny" type="number" min="0" max="100" id="mid_${i}" value="${esc(x.mid)}" placeholder="—" onchange="setExamRow(${i})"> 점</td>
+      <td><input class="tiny" type="number" min="0" max="100" id="fin_${i}" value="${esc(x.fin)}" placeholder="—" onchange="setExamRow(${i})"> 점</td>
+      <td><span class="savemark" id="xsv_${i}">저장됨 ✓</span></td>
+    </tr>`;
+  });
+  html += `</table></div>`;
+  $("viewBox").innerHTML = html;
+}
+async function setExamRow(i){
+  const s = myStudents()[i];
+  const mid = $("mid_"+i).value, fin = $("fin_"+i).value;
+  let x = P.exams.find(e=>e.cls===s.cls && e.name===s.name);
+  if(!x){ x={cls:s.cls,name:s.name,mid:"",fin:""}; P.exams.push(x); }
+  x.mid=mid; x.fin=fin;
+  await post({action:"setExam", cls:s.cls, name:s.name, mid, fin});
+  const el=$("xsv_"+i); el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1600);
+}
+
+/* ============ 주간 마무리 ============ */
+function renderWeekly(){
+  const isAdmin = ME.isAdmin;
+  const today = todayISO();
+  let html = "";
+  if(!isAdmin){
+    const mine = P.weekly.find(w=>w.date===today && w.cls===ME.cls);
+    html += `<div class="card"><h3>이번 주 마무리 <span class="muted">${today} · ${ME.cls}</span></h3>
+      <textarea id="wknote" rows="4" style="width:100%" placeholder="오늘 수업 특이사항을 적어주세요 (예: ○○이가 발표를 아주 잘했어요 / 다음 주 준비물 안내...)">${mine&&mine.note!=="없음"?esc(mine.note):""}</textarea>
+      <div class="mbtns" style="max-width:420px">
+        <button class="btn ghost" onclick="submitWeekly(true)">특이사항 없음</button>
+        <button class="btn primary" onclick="submitWeekly(false)">제출하기</button>
+      </div>
+      ${mine?`<p class="muted" style="margin-top:10px">✓ ${today} 제출 완료 — 다시 제출하면 덮어써져요</p>`:""}
+    </div>`;
+  }
+  const rows = P.weekly.filter(w=>isAdmin?(FILTER==="ALL"||w.cls===FILTER):w.cls===ME.cls)
+    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+  html += `<div class="card"><h3>${isAdmin?"전체 반 주간마무리":"지난 기록"} <span class="muted">금요일 밤 9시에 관리자 이메일로 자동 발송됩니다</span></h3>`;
+  if(isAdmin){
+    const todayRows = classes().map(c=>({c, wk:P.weekly.find(w=>w.date===today&&w.cls===c)}));
+    html += `<table><tr><th>반</th><th>오늘 (${today})</th></tr>` +
+      todayRows.map(({c,wk})=>`<tr><td>${clsChip(c)}</td><td>${wk?esc(wk.note)||"없음":`<span class="chip badge-none">미제출</span>`}</td></tr>`).join("") + `</table><br>`;
+  }
+  html += rows.length ? `<table><tr><th>날짜</th><th>반</th><th>선생님</th><th>특이사항</th></tr>` +
+    rows.map(w=>`<tr><td style="white-space:nowrap">${w.date}</td><td>${clsChip(w.cls)}</td><td>${esc(w.teacher)}</td><td>${esc(w.note)}</td></tr>`).join("") + `</table>`
+    : `<p class="muted">아직 기록이 없어요</p>`;
+  html += `</div>`;
+  $("viewBox").innerHTML = html;
+}
+async function submitWeekly(none){
+  const note = none ? "없음" : $("wknote").value.trim();
+  if(!none && !note){ alert("내용을 입력하시거나 '특이사항 없음'을 눌러주세요"); return; }
+  const res = await post({action:"setWeekly", date:todayISO(), cls:ME.cls, teacher:ME.name, note});
+  if(res.ok){ await refresh(false); go("weekly"); }
+}
+
+/* init */
+initLogin();
+</script>
+</body>
+</html>
