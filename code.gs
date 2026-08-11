@@ -310,7 +310,7 @@ function doPost(e) {
     if (req.action === "record" || !req.action) {
       const t = req.ts ? new Date(req.ts) : new Date();
       logSheet_().appendRow([
-        Utilities.formatDate(t, tz_(), "yyyy-MM-dd"),
+        req.date || Utilities.formatDate(t, tz_(), "yyyy-MM-dd"),
         Utilities.formatDate(t, tz_(), "HH:mm:ss"),
         req.name, req.gender, req.cls,
         req.type === "in" ? "등원" : (req.type === "out" ? "하원" : "취소"),
@@ -321,10 +321,22 @@ function doPost(e) {
       result = { ok: true, notion: notion };
     }
     else if (req.action === "updateStudent") result = { ok: true, r: updateStudent_(req) };
-    else if (req.action === "setLearning") result = { ok: true, r: setLearning_(req) };
-    else if (req.action === "setExam") result = { ok: true, r: setExam_(req) };
-    else if (req.action === "setWeekly") result = { ok: true, r: setWeekly_(req) };
-    else if (req.action === "setReason") result = { ok: true, r: setReason_(req) };
+    else if (req.action === "setLearning") {
+      result = { ok: true, r: setLearning_(req) };
+      try { result.notion = pushLearnNotion_(req); } catch (e) { result.notion = "error: " + e; }
+    }
+    else if (req.action === "setExam") {
+      result = { ok: true, r: setExam_(req) };
+      try { result.notion = pushExamNotion_(req); } catch (e) { result.notion = "error: " + e; }
+    }
+    else if (req.action === "setWeekly") {
+      result = { ok: true, r: setWeekly_(req) };
+      try { result.notion = pushWeeklyNotion_(req); } catch (e) { result.notion = "error: " + e; }
+    }
+    else if (req.action === "setReason") {
+      result = { ok: true, r: setReason_(req) };
+      try { result.notion = pushReasonNotion_(req); } catch (e) { result.notion = "error: " + e; }
+    }
     else result = { ok: false, error: "unknown action" };
   } catch (err) { result = { ok: false, error: String(err) }; }
   return ContentService.createTextOutput(JSON.stringify(result))
@@ -426,6 +438,85 @@ function setupFallSemester() {
   Logger.log("semester page: " + page.id + " / db: " + db.id);
 }
 
+/* ================= Notion 실시간 동기화 (학습·시험·주간·결석) ================= */
+function notionDb_(key) { return PropertiesService.getScriptProperties().getProperty(key); }
+function notionUpsert_(dbId, filter, props) {
+  const headers = notionHeaders_();
+  if (!headers || !dbId) return "not configured";
+  const q = UrlFetchApp.fetch("https://api.notion.com/v1/databases/" + dbId + "/query",
+    { method: "post", headers: headers, payload: JSON.stringify({ filter: filter, page_size: 1 }), muteHttpExceptions: true });
+  const data = JSON.parse(q.getContentText());
+  const hit = (data.results || [])[0];
+  if (hit) {
+    UrlFetchApp.fetch("https://api.notion.com/v1/pages/" + hit.id,
+      { method: "patch", headers: headers, payload: JSON.stringify({ properties: props }), muteHttpExceptions: true });
+    return "updated";
+  }
+  const c = UrlFetchApp.fetch("https://api.notion.com/v1/pages",
+    { method: "post", headers: headers, payload: JSON.stringify({ parent: { database_id: dbId }, properties: props }), muteHttpExceptions: true });
+  return c.getResponseCode() === 200 ? "added" : "error " + c.getResponseCode();
+}
+function T_(s) { return { title: [{ text: { content: String(s || "") } }] }; }
+function RT_(s) { return { rich_text: [{ text: { content: String(s || "") } }] }; }
+function SEL_(s) { return { select: { name: String(s || "—") } }; }
+function DT_(s) { return { date: { start: String(s) } }; }
+function pushLearnNotion_(req) {
+  return notionUpsert_(notionDb_("NOTION_LEARN_DB"),
+    { and: [ { property: "이름", title: { equals: String(req.name) } },
+             { property: "반", select: { equals: String(req.cls) } },
+             { property: "날짜", date: { equals: String(req.date) } } ] },
+    { "이름": T_(req.name), "반": SEL_(req.cls), "날짜": DT_(req.date),
+      "숙제": SEL_(req.hw || "미입력"), "받아쓰기": RT_(req.dict), "기록자": RT_(req.by) });
+}
+function pushExamNotion_(req) {
+  return notionUpsert_(notionDb_("NOTION_EXAM_DB"),
+    { and: [ { property: "이름", title: { equals: String(req.name) } },
+             { property: "반", select: { equals: String(req.cls) } } ] },
+    { "이름": T_(req.name), "반": SEL_(req.cls), "중간시험": RT_(req.mid), "기말시험": RT_(req.fin) });
+}
+function pushWeeklyNotion_(req) {
+  return notionUpsert_(notionDb_("NOTION_WEEKLY_DB"),
+    { and: [ { property: "반", title: { equals: String(req.cls) } },
+             { property: "날짜", date: { equals: String(req.date) } } ] },
+    { "반": T_(req.cls), "날짜": DT_(req.date), "선생님": RT_(req.teacher), "특이사항": RT_(req.note || "없음") });
+}
+function pushReasonNotion_(req) {
+  return notionUpsert_(notionDb_("NOTION_REASON_DB"),
+    { and: [ { property: "이름", title: { equals: String(req.name) } },
+             { property: "반", select: { equals: String(req.cls) } },
+             { property: "날짜", date: { equals: String(req.date) } } ] },
+    { "이름": T_(req.name), "반": SEL_(req.cls), "날짜": DT_(req.date),
+      "결석사유": RT_(req.reason), "기록자": RT_(req.by) });
+}
+/* 가을학기 페이지 아래에 학습현황/시험/주간마무리/결석사유 DB 생성 (1회 실행) */
+function setupSemesterDBs() {
+  const headers = notionHeaders_();
+  const parent = PropertiesService.getScriptProperties().getProperty("SEMESTER_PAGE_ID");
+  if (!headers || !parent) throw new Error("setupFallSemester 를 먼저 실행하세요");
+  const mk = function(title, props) {
+    const res = UrlFetchApp.fetch("https://api.notion.com/v1/databases", {
+      method: "post", headers: headers, muteHttpExceptions: true,
+      payload: JSON.stringify({ parent: { type: "page_id", page_id: parent },
+        title: [{ text: { content: title } }], properties: props }),
+    });
+    const d = JSON.parse(res.getContentText());
+    if (!d.id) throw new Error(title + " 생성 실패: " + res.getContentText());
+    return d.id;
+  };
+  const p = PropertiesService.getScriptProperties();
+  p.setProperty("NOTION_LEARN_DB", mk("학습현황 (가을학기)",
+    { "이름": { title: {} }, "반": { select: {} }, "날짜": { date: {} },
+      "숙제": { select: {} }, "받아쓰기": { rich_text: {} }, "기록자": { rich_text: {} } }));
+  p.setProperty("NOTION_EXAM_DB", mk("시험 성적 (가을학기)",
+    { "이름": { title: {} }, "반": { select: {} }, "중간시험": { rich_text: {} }, "기말시험": { rich_text: {} } }));
+  p.setProperty("NOTION_WEEKLY_DB", mk("주간마무리 (가을학기)",
+    { "반": { title: {} }, "날짜": { date: {} }, "선생님": { rich_text: {} }, "특이사항": { rich_text: {} } }));
+  p.setProperty("NOTION_REASON_DB", mk("결석사유 (가을학기)",
+    { "이름": { title: {} }, "반": { select: {} }, "날짜": { date: {} },
+      "결석사유": { rich_text: {} }, "기록자": { rich_text: {} } }));
+  Logger.log("semester DBs created: learn/exam/weekly/reason");
+}
+
 /* ================= 테스트 데이터 정리 (8/13 자동 실행) ================= */
 function cleanupTestData() {
   // 시트: 헤더만 남기고 전부 삭제
@@ -435,24 +526,27 @@ function cleanupTestData() {
     const n = sh.getLastRow();
     if (n > 1) sh.deleteRows(2, n - 1);
   });
-  // Notion 체크인 DB: 테스트 기록 전부 보관 처리(archive)
+  // Notion: 모든 학기 DB의 테스트 기록 전부 보관 처리(archive)
   try {
     const headers = notionHeaders_();
-    const dbId = PropertiesService.getScriptProperties().getProperty("NOTION_DB_ID");
-    if (headers && dbId) {
-      let cursor = null, guard = 0;
-      while (guard++ < 20) {
-        const body = cursor ? { start_cursor: cursor, page_size: 100 } : { page_size: 100 };
-        const res = UrlFetchApp.fetch("https://api.notion.com/v1/databases/" + dbId + "/query",
-          { method: "post", headers: headers, payload: JSON.stringify(body), muteHttpExceptions: true });
-        const data = JSON.parse(res.getContentText());
-        (data.results || []).forEach(function(p) {
-          UrlFetchApp.fetch("https://api.notion.com/v1/pages/" + p.id,
-            { method: "patch", headers: headers, payload: JSON.stringify({ archived: true }), muteHttpExceptions: true });
-        });
-        if (!data.has_more) break;
-        cursor = data.next_cursor;
-      }
+    if (headers) {
+      ["NOTION_DB_ID","NOTION_LEARN_DB","NOTION_EXAM_DB","NOTION_WEEKLY_DB","NOTION_REASON_DB"].forEach(function(key) {
+        const dbId = PropertiesService.getScriptProperties().getProperty(key);
+        if (!dbId) return;
+        let cursor = null, guard = 0;
+        while (guard++ < 20) {
+          const body = cursor ? { start_cursor: cursor, page_size: 100 } : { page_size: 100 };
+          const res = UrlFetchApp.fetch("https://api.notion.com/v1/databases/" + dbId + "/query",
+            { method: "post", headers: headers, payload: JSON.stringify(body), muteHttpExceptions: true });
+          const data = JSON.parse(res.getContentText());
+          (data.results || []).forEach(function(p) {
+            UrlFetchApp.fetch("https://api.notion.com/v1/pages/" + p.id,
+              { method: "patch", headers: headers, payload: JSON.stringify({ archived: true }), muteHttpExceptions: true });
+          });
+          if (!data.has_more) break;
+          cursor = data.next_cursor;
+        }
+      });
     }
   } catch (e) { Logger.log("notion cleanup error: " + e); }
 }

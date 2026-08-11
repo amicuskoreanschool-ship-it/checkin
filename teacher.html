@@ -404,14 +404,18 @@ function renderDash(){
 /* ============ 출석 체크 ============ */
 function renderAttend(){
   const list = myStudents();
-  const nIn = list.filter(s=>stateOf(s)==="in").length;
-  const nOut = list.filter(s=>stateOf(s)==="out").length;
-  const today = todayISO();
+  const WF = defaultFriday(); // 대시보드와 동일한 '이번 주 수업일(금)' 기준
+  const nIn = list.filter(s=>attOf(s,WF)==="in").length;
+  const nOut = list.filter(s=>attOf(s,WF)==="out").length;
   const nLate = list.filter(s=>{
-    const r = attRec(s, today);
+    const r = attRec(s, WF);
     return r && r.type!=="none" && isLate(r.inAt, s.cls);
   }).length;
   let html = `
+  <div class="card" style="padding:13px 20px;margin-bottom:12px">
+    <b class="jua" style="font-size:17px">${weekNum(WF)}주차 · ${Number(WF.slice(5,7))}/${Number(WF.slice(8,10))} (금) 출석 체크</b>
+    <span class="muted" style="font-size:12.5px;margin-left:8px">대시보드와 같은 주간 기준으로 집계돼요</span>
+  </div>
   <div class="stats">
     <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
     <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
@@ -420,8 +424,8 @@ function renderAttend(){
     <div class="stat"><b>${list.length}</b><span>전체</span></div>
   </div>`;
   html += list.map((s,i)=>{
-    const st = stateOf(s);
-    const rec = attRec(s, today);
+    const st = attOf(s, WF);
+    const rec = attRec(s, WF);
     const inTime = rec && rec.inAt ? rec.inAt.slice(0,5) : "";
     const timeChip = (st==="none" || !inTime) ? "" :
       (isLate(rec.inAt, s.cls)
@@ -434,7 +438,7 @@ function renderAttend(){
       ${ME.isAdmin?clsChip(s.cls):""}
       <button class="abtn none ${st==="none"?"on":""}" onclick="aSet(${i},'none')">미등원</button>
       <input class="rsn" id="rsn_${i}" type="text" placeholder="결석 사유" maxlength="40"
-        value="${esc(reasonOf(s,todayISO()))}" onchange="setReasonRow(${i})">
+        value="${esc(reasonOf(s,WF))}" onchange="setReasonRow(${i})">
       <span class="savemark" id="rsv_${i}">저장됨 ✓</span>
       <button class="abtn in ${st==="in"?"on":""}" onclick="aSet(${i},'in')">등원</button>
       <button class="abtn out ${st==="out"?"on":""}" onclick="aSet(${i},'out')">하원</button>
@@ -449,7 +453,7 @@ function reasonOf(s, date){
 async function setReasonRow(i){
   const s = myStudents()[i];
   const val = $("rsn_"+i).value.trim();
-  const date = todayISO();
+  const date = defaultFriday(); // 이번 주 수업일 기준으로 저장
   P.reasons = P.reasons || [];
   const ex = P.reasons.find(x=>x.date===date && x.cls===s.cls && x.name===s.name);
   if(ex) ex.reason = val; else P.reasons.push({date, cls:s.cls, name:s.name, reason:val});
@@ -459,10 +463,19 @@ async function setReasonRow(i){
 }
 async function aSet(i,type){
   const s = myStudents()[i];
-  if(stateOf(s)===type) return;
-  P.log.push({id:s.name+"|"+s.cls, name:s.name, gender:s.gender, cls:s.cls, type, by:"선생님", ts:new Date().toISOString()});
+  const WF = defaultFriday();
+  if(attOf(s,WF)===type) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0")+":"+String(now.getSeconds()).padStart(2,"0");
+  P.att = P.att || [];
+  let a = P.att.find(x=>x.date===WF && x.cls===s.cls && x.name===s.name);
+  if(!a){ a = {date:WF, name:s.name, cls:s.cls, type:"none", inAt:""}; P.att.push(a); }
+  a.type = type;
+  if(type==="in" && !a.inAt) a.inAt = hh;
+  if(type==="none") a.inAt = "";
+  if(WF===todayISO()) P.log.push({id:s.name+"|"+s.cls, name:s.name, gender:s.gender, cls:s.cls, type, by:"선생님", ts:now.toISOString()});
   render();
-  await post({action:"record", id:s.name+"|"+s.cls, name:s.name, gender:s.gender, cls:s.cls, type, ts:new Date().toISOString(), by:"teacher"});
+  await post({action:"record", id:s.name+"|"+s.cls, name:s.name, gender:s.gender, cls:s.cls, type, date:WF, ts:now.toISOString(), by:"teacher"});
 }
 
 /* ============ 명단 ============ */
