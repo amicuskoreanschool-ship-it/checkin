@@ -59,6 +59,9 @@
   .deco.d2{font-size:90px;right:6px;top:10px;transform:rotate(10deg)}
   .deco.d3{font-size:70px;right:60px;bottom:40px;transform:rotate(-7deg);color:#F5E9DA}
   .stage{width:100%;max-width:700px;display:flex;flex-direction:column;flex:1;min-height:0;position:relative;z-index:1}
+  /* 검색 전(대기 화면)에는 문구·시계·검색창을 페이지 세로 중앙에 배치 */
+  #viewKiosk::before{content:"";flex:0 1 0;transition:flex .25s ease}
+  #viewKiosk.idle::before{flex:1 1 0}
   .prompt{font-family:"Jua";font-size:31px;text-align:center;line-height:1.4;max-width:640px;margin:0 auto}
   .prompt small{display:block;font-family:"Pretendard Variable",sans-serif;font-size:15.5px;color:var(--ink2);font-weight:600;margin-top:8px}
   .searchbox{margin-top:16px;position:relative}
@@ -204,7 +207,7 @@
   <span class="deco d3">ㄴ</span>
 
   <!-- ============ 학부모 키오스크 ============ -->
-  <div class="stage" id="viewKiosk">
+  <div class="stage idle" id="viewKiosk">
     <div class="prompt">오늘도 아미쿠스 한국학교에 오신 것을 환영합니다! 💛<small>아래에서 아이의 이름을 검색하여 체크인/체크아웃을 진행해주세요.</small></div>
     <div class="kclock"><span class="kd" id="dateNow"></span><span class="kt" id="timeNow">--:--</span></div>
     <div class="searchbox">
@@ -339,6 +342,7 @@ function stateOf(id){
    ============================================================ */
 function search(qraw){
   const q=qraw.trim(), box=$("results");
+  $("viewKiosk").classList.toggle("idle", !q);
   $("clearBtn").style.display=q?"block":"none";
   $("sicon").style.display=q?"none":"block";
   if(!q){ box.innerHTML=`<div class="hintbox">이름을 입력하면 학생이 여기에 나타나요</div>`; return; }

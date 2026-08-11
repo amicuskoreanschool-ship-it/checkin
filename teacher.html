@@ -85,6 +85,10 @@
   .arow{background:var(--paper);border:2px solid var(--line);border-radius:18px;
     padding:12px 16px;display:flex;align-items:center;gap:13px;margin-bottom:9px}
   .arow .nm{font-family:"Jua";font-size:18px;flex:1}
+  .arow .rsn{width:130px;border:2px solid var(--line);border-radius:12px;padding:9px 11px;
+    font-family:inherit;font-size:13px;font-weight:600;background:#fff;color:var(--ink)}
+  .arow .rsn::placeholder{color:#C8BBA8;font-weight:600}
+  .arow .rsn:focus{outline:none;border-color:var(--orange)}
   .abtn{border:2px solid var(--line);background:#fff;border-radius:12px;
     padding:9px 13px;font-size:13.5px;font-weight:800;color:var(--ink3);cursor:pointer;font-family:inherit}
   .abtn.none.on{background:var(--line-soft);border-color:var(--ink3);color:var(--ink2)}
@@ -172,9 +176,12 @@ const CLS_COLORS = {
   "자비":["#E2F5F0","#1F9077"],"파도":["#E3ECFB","#3757B8"],"하늘":["#E0F2FF","#2B8FD8"],
 };
 const clsColor = c => { const k=Object.keys(CLS_COLORS).find(k=>(c||"").startsWith(k)); return k?CLS_COLORS[k]:["#F3EBE0","#8A6D4F"]; };
+const clsLabel = c => !c ? "" : (c.includes("(4시)") ? c : c + " (6시30)"); // 반 이름에 수업 시간 표시
+/* 지각 판정: 4시 반은 4:05까지, 6시30 반은 6:35까지 정시 */
+const isLate = (inAt, cls) => !!inAt && ((cls||"").includes("(4시)") ? inAt.slice(0,5) > "16:05" : inAt.slice(0,5) > "18:35");
 const genderColor = g => g==="여" ? ["#FDE7EF","#D14D84"] : ["#E3F0FE","#2E6FBB"];
 const gAvatar = (s,size=40,fs=17) => `<span class="gav" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${genderColor(s.gender)[0]};color:${genderColor(s.gender)[1]}">${esc(s.name.replace(/\s/g,"")[0]||"?")}</span>`;
-const clsChip = c => `<span class="chip" style="background:${clsColor(c)[0]};color:${clsColor(c)[1]}">${c}</span>`;
+const clsChip = c => `<span class="chip" style="background:${clsColor(c)[0]};color:${clsColor(c)[1]}">${clsLabel(c)}</span>`;
 const esc = s => String(s??"").replace(/</g,"&lt;");
 const todayISO = () => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
 
@@ -221,7 +228,7 @@ async function initLogin(){
     TEACHERS = (d.teachers||[]);
     const seen = {};
     const opts = TEACHERS.filter(t=>{ const k=t.name+"|"+t.cls; if(seen[k]) return false; seen[k]=1; return true; })
-      .map((t,i)=>`<option value="${i}">${esc(t.name)} — ${esc(t.cls)}</option>`).join("");
+      .map((t,i)=>`<option value="${i}">${esc(t.name)} — ${esc(clsLabel(t.cls))}</option>`).join("");
     $("loginWho").innerHTML = `<option value="">이름을 선택하세요...</option>` + opts +
       `<option value="ADMIN">관리자 (교장선생님)</option>`;
   }catch(e){ $("loginWho").innerHTML = `<option value="">명단을 불러오지 못했어요</option>`; }
@@ -254,7 +261,7 @@ const NAVS_T = [["dash","대시보드"],["roster","명단"],["attend","출석 �
 async function enterPortal(){
   $("loginView").classList.add("hidden");
   $("portalView").classList.remove("hidden");
-  $("meLabel").textContent = ME.isAdmin ? "관리자" : `${ME.name} · ${ME.cls}`;
+  $("meLabel").textContent = ME.isAdmin ? "관리자" : `${ME.name} · ${clsLabel(ME.cls)}`;
   $("subLabel").textContent = ME.isAdmin ? "관리자 포털" : "선생님 포털";
   $("navBar").innerHTML = NAVS_T.map(([k,label])=>
     `<button class="navbtn ${k===VIEW?"on":""}" data-v="${k}" onclick="go('${k}')">${label}</button>`).join("");
@@ -266,7 +273,11 @@ async function refresh(showLoading){
   if(showLoading) $("viewBox").innerHTML = `<div class="card"><h3>불러오는 중...</h3></div>`;
   try{
     const d = await api({action:"portal", cls: ME.isAdmin ? "ALL" : ME.cls});
-    if(d.ok){ P = d; render(); }
+    if(d.ok){
+      P = d;
+      const ae = document.activeElement; // 입력 중이면 화면을 다시 그리지 않음 (입력 내용 보호)
+      if(!(ae && ($("viewBox").contains(ae)) && (ae.tagName==="INPUT" || ae.tagName==="TEXTAREA"))) render();
+    }
   }catch(e){ console.warn(e); }
 }
 function myStudents(){
@@ -284,8 +295,11 @@ function stateOf(s){
 function learnOf(s, date){
   return P.learning.find(l=>l.date===date && l.cls===s.cls && l.name===s.name) || {hw:"",dict:""};
 }
+function attRec(s, date){
+  return (P.att||[]).find(a=>a.date===date && a.cls===s.cls && a.name===s.name) || null;
+}
 function attOf(s, date){
-  const r = (P.att||[]).find(a=>a.date===date && a.cls===s.cls && a.name===s.name);
+  const r = attRec(s, date);
   return r ? r.type : "none"; // in/out = 그날 출석함
 }
 function examOf(s){
@@ -308,7 +322,7 @@ function renderFilter(){
     const on = c===FILTER;
     const [bg,fg] = c==="ALL"?["#43352A","#fff"]:clsColor(c);
     return `<button class="clschip" style="${on?`background:${c==="ALL"?"#43352A":fg};border-color:${c==="ALL"?"#43352A":fg};color:#fff`:`background:${c==="ALL"?"#fff":bg};color:${c==="ALL"?"#43352A":fg};border-color:${c==="ALL"?"var(--line)":bg}`}"
-      onclick="FILTER='${c}';render()">${c==="ALL"?"전체":c}</button>`;
+      onclick="FILTER='${c}';render()">${c==="ALL"?"전체":clsLabel(c)}</button>`;
   }).join("");
 }
 function render(){
@@ -330,11 +344,13 @@ function renderDash(){
   const nIn = list.filter(s=>attOf(s,LDATE)==="in").length;
   const nOut = list.filter(s=>attOf(s,LDATE)==="out").length;
   const attended = nIn+nOut;
+  const nLate = list.filter(s=>{const r=attRec(s,LDATE); return r&&r.type!=="none"&&isLate(r.inAt,s.cls);}).length;
   const now = new Date();
   let html = `<div class="card" style="padding:14px 18px"><h3 style="margin:0">${wk}주차 · ${dateLabel} (금) 이번 주 현황 <span class="live">● LIVE</span> <span class="muted">${now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})} 업데이트 · ${CONFIG.SYNC_SEC}초마다 자동</span></h3></div>`;
   html += `<div class="stats">
     <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
     <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
+    <div class="stat"><b style="color:var(--red)">${nLate}</b><span>지각</span></div>
     <div class="stat"><b>${list.length-attended}</b><span>미등원</span></div>
     <div class="stat"><b>${list.length}</b><span>전체</span></div>`;
   if(ME.isAdmin && FILTER==="ALL"){
@@ -348,28 +364,35 @@ function renderDash(){
   html += `</div>`;
   if(ME.isAdmin && FILTER==="ALL"){
     html += `<div class="card"><h3>반별 현황 <span class="muted">반 이름을 누르면 그 반의 주차별 출석표가 보여요</span></h3>
-    <table><tr><th>반</th><th>등원</th><th>하원</th><th>미등원</th><th>주간마무리</th></tr>`;
+    <table><tr><th>반</th><th>등원</th><th>하원</th><th>지각</th><th>미등원</th><th>주간마무리</th></tr>`;
     classes().forEach(c=>{
       const kids=P.students.filter(s=>s.cls===c);
       const cin=kids.filter(s=>attOf(s,LDATE)==="in").length;
       const cout=kids.filter(s=>attOf(s,LDATE)==="out").length;
+      const clate=kids.filter(s=>{const r=attRec(s,LDATE); return r&&r.type!=="none"&&isLate(r.inAt,s.cls);}).length;
       const wkk=P.weekly.find(w=>w.date===LDATE&&w.cls===c);
       html += `<tr style="cursor:pointer" onclick="FILTER='${c.replace(/'/g,"\\'")}';render()">
         <td>${clsChip(c)}</td>
         <td style="color:var(--green);font-weight:800">${cin}</td>
         <td style="color:var(--amber);font-weight:800">${cout}</td>
+        <td style="color:var(--red);font-weight:800">${clate}</td>
         <td>${kids.length-cin-cout}</td>
         <td>${wkk?`<span class="chip badge-ok">제출</span>`:`<span class="chip badge-none">미제출</span>`}</td></tr>`;
     });
     html += `</table></div>`;
   } else {
-    html += `<div class="card"><h3>주차별 출석 <span class="muted">가을학기 15주 · ✓ = 그날 출석함</span></h3>
+    html += `<div class="card"><h3>주차별 출석 <span class="muted">가을학기 15주 · ✓ 정시 출석 · <span style="color:var(--red)">지각</span> = 4시반 4:05 / 6시30반 6:35 이후 체크인</span></h3>
     <div style="overflow-x:auto"><table><tr><th>이름</th>${FRIDAYS.map(d=>`<th style="text-align:center;${d===LDATE?"color:var(--orange-deep)":""}">${weekNum(d)}주<br>${d.slice(5).replace("-","/")}</th>`).join("")}</tr>`;
     list.forEach(s=>{
       html += `<tr><td style="white-space:nowrap">${gAvatar(s,28,12)} <b class="jua">${esc(s.name)}</b></td>`;
       FRIDAYS.forEach(d=>{
-        const a = attOf(s,d);
-        html += `<td style="text-align:center">${a!=="none"?`<span style="color:var(--green);font-weight:800">✓</span>`:""}</td>`;
+        const r = attRec(s,d);
+        const present = r && r.type!=="none";
+        html += `<td style="text-align:center">${present
+          ? (isLate(r.inAt,s.cls)
+              ? `<span style="color:var(--red);font-weight:800;font-size:11.5px">지각</span>`
+              : `<span style="color:var(--green);font-weight:800">✓</span>`)
+          : ""}</td>`;
       });
       html += `</tr>`;
     });
@@ -397,11 +420,29 @@ function renderAttend(){
       <span class="nm">${esc(s.name)}</span>
       ${ME.isAdmin?clsChip(s.cls):""}
       <button class="abtn none ${st==="none"?"on":""}" onclick="aSet(${i},'none')">미등원</button>
+      <input class="rsn" id="rsn_${i}" type="text" placeholder="결석 사유" maxlength="40"
+        value="${esc(reasonOf(s,todayISO()))}" onchange="setReasonRow(${i})">
+      <span class="savemark" id="rsv_${i}">저장됨 ✓</span>
       <button class="abtn in ${st==="in"?"on":""}" onclick="aSet(${i},'in')">등원</button>
       <button class="abtn out ${st==="out"?"on":""}" onclick="aSet(${i},'out')">하원</button>
     </div>`;
   }).join("");
   $("viewBox").innerHTML = html;
+}
+function reasonOf(s, date){
+  const r = (P.reasons||[]).find(x=>x.date===date && x.cls===s.cls && x.name===s.name);
+  return r ? r.reason : "";
+}
+async function setReasonRow(i){
+  const s = myStudents()[i];
+  const val = $("rsn_"+i).value.trim();
+  const date = todayISO();
+  P.reasons = P.reasons || [];
+  const ex = P.reasons.find(x=>x.date===date && x.cls===s.cls && x.name===s.name);
+  if(ex) ex.reason = val; else P.reasons.push({date, cls:s.cls, name:s.name, reason:val});
+  await post({action:"setReason", date, cls:s.cls, name:s.name, reason:val, by:ME.name});
+  const m = $("rsv_"+i);
+  if(m){ m.classList.add("show"); setTimeout(()=>m.classList.remove("show"),1500); }
 }
 async function aSet(i,type){
   const s = myStudents()[i];
