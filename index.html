@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>아미쿠스 한국학교 체크인</title>
+<style>
+  :root{
+    --blue:#256EF4; --blue-dark:#1D5BD6; --blue-bg:#EFF5FF;
+    --green:#008A1E; --green-bg:#EAF6EC;
+    --red:#DE3412; --red-bg:#FDEFED;
+    --amber:#B27B00; --amber-bg:#FFF6E0;
+    --ink:#1E2124; --ink2:#464C53; --ink3:#8A949E;
+    --line:#E6E8EA; --bg:#F4F5F6; --card:#FFFFFF;
+    --radius:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"Pretendard","Pretendard Variable","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; user-select:none;
+  }
+  header{
+    background:var(--card); border-bottom:1px solid var(--line);
+    padding:12px 20px; display:flex; align-items:center; gap:13px;
+  }
+  .logo{
+    width:42px;height:42px;border-radius:12px;background:var(--blue);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:800;font-size:19px;flex:none;
+  }
+  .htitle{flex:1;min-width:0}
+  .htitle h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+  .htitle p{font-size:12.5px;color:var(--ink3);margin-top:1px}
+  .clock{text-align:right}
+  .clock .date{font-size:12.5px;color:var(--ink2)}
+  .clock .time{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .hbtn{border:none;background:var(--bg);font-size:13.5px;font-weight:600;color:var(--ink2);
+    padding:9px 13px;border-radius:10px;cursor:pointer;font-family:inherit}
+  .hbtn.active{background:var(--blue-bg);color:var(--blue)}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;padding:22px 18px 16px;overflow:hidden}
+  .stage{width:100%;max-width:720px;display:flex;flex-direction:column;flex:1;min-height:0}
+  .prompt{font-size:23px;font-weight:700;text-align:center;line-height:1.4;letter-spacing:-.4px}
+  .prompt small{display:block;font-size:14px;color:var(--ink3);font-weight:400;margin-top:5px}
+  .searchbox{margin-top:16px;position:relative}
+  .searchbox input{
+    width:100%;height:62px;border:2px solid var(--line);border-radius:var(--radius);
+    background:var(--card);font-size:21px;padding:0 58px 0 20px;outline:none;font-family:inherit;
+  }
+  .searchbox input:focus{border-color:var(--blue)}
+  .searchbox .sicon{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:21px;color:var(--ink3)}
+  #clearBtn{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    width:36px;height:36px;border-radius:50%;border:none;background:var(--line);
+    color:var(--ink2);font-size:16px;cursor:pointer;display:none}
+  .scroll{margin-top:13px;overflow-y:auto;flex:1;min-height:0;padding-bottom:8px}
+  .hintbox{text-align:center;color:var(--ink3);font-size:15px;padding:32px 10px;line-height:1.7}
+  .kbadge{display:inline-block;background:var(--blue-bg);color:var(--blue);border-radius:8px;padding:2px 10px;font-weight:600}
+  .scard{
+    background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:15px 18px;display:flex;align-items:center;gap:15px;margin-bottom:9px;
+    cursor:pointer;transition:border-color .12s, transform .06s;
+  }
+  .scard:active{transform:scale(.985);border-color:var(--blue)}
+  .avatar{width:50px;height:50px;border-radius:50%;flex:none;display:flex;align-items:center;
+    justify-content:center;font-size:21px;font-weight:700;color:#fff}
+  .avatar.m{background:#4A7DDE}
+  .avatar.f{background:#D96BA0}
+  .sinfo{flex:1;min-width:0}
+  .sname{font-size:20px;font-weight:700;letter-spacing:-.3px}
+  .smeta{margin-top:4px;display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-size:13px;padding:3px 10px;border-radius:8px;font-weight:600}
+  .chip.gender{background:var(--bg);color:var(--ink2)}
+  .chip.cls{background:var(--blue-bg);color:var(--blue)}
+  .badge{font-size:13.5px;font-weight:700;padding:6px 12px;border-radius:9px;flex:none}
+  .badge.none{background:var(--bg);color:var(--ink3)}
+  .badge.in{background:var(--green-bg);color:var(--green)}
+  .badge.out{background:var(--amber-bg);color:var(--amber)}
+  .badge.pick{background:var(--blue-bg);color:var(--blue)}
+  .overlay{position:fixed;inset:0;background:rgba(20,25,35,.45);display:none;
+    align-items:center;justify-content:center;padding:22px;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:var(--card);border-radius:22px;max-width:470px;width:100%;
+    padding:28px 24px 22px;text-align:center;animation:pop .18s ease-out;
+    max-height:88vh;overflow-y:auto}
+  @keyframes pop{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .avatar{width:70px;height:70px;font-size:29px;margin:0 auto}
+  .modal h2{font-size:25px;margin-top:13px;letter-spacing:-.4px}
+  .modal .mmeta{margin-top:9px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .modal .mmeta .chip{font-size:14.5px;padding:5px 13px}
+  .modal .q{margin-top:16px;font-size:15.5px;color:var(--ink2)}
+  .mbtns{display:flex;gap:9px;margin-top:20px}
+  .btn{flex:1;height:58px;border-radius:14px;border:none;font-size:18px;font-weight:700;
+    cursor:pointer;font-family:inherit;letter-spacing:-.3px}
+  .btn.ghost{background:var(--bg);color:var(--ink2)}
+  .btn.primary{background:var(--blue);color:#fff}
+  .btn.primary:active{background:var(--blue-dark)}
+  .btn.warn{background:var(--amber-bg);color:var(--amber)}
+  .btn.sm{height:46px;font-size:15.5px;border-radius:11px}
+  .done .ic{width:92px;height:92px;border-radius:50%;margin:4px auto 0;display:flex;
+    align-items:center;justify-content:center;font-size:44px;color:#fff;animation:pop .25s ease-out}
+  .done .ic.in{background:var(--green)}
+  .done .ic.out{background:var(--amber)}
+  .done .sub{margin-top:8px;color:var(--ink2);font-size:15.5px;line-height:1.6}
+  #banner{display:none;background:#FFF3CD;color:#7A5A00;font-size:13px;
+    padding:7px 14px;text-align:center;border-bottom:1px solid #F0E0A0}
+  .pinpad input{width:100%;height:54px;text-align:center;font-size:25px;letter-spacing:8px;
+    border:2px solid var(--line);border-radius:12px;outline:none;margin-top:14px;font-family:inherit}
+  /* class chips */
+  .clsbar{display:flex;gap:8px;overflow-x:auto;padding:14px 2px 2px;flex:none}
+  .clschip{flex:none;border:1.5px solid var(--line);background:var(--card);border-radius:12px;
+    padding:10px 15px;font-size:15px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
+  .clschip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .trow{
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    padding:12px 15px;display:flex;align-items:center;gap:12px;margin-bottom:8px;
+  }
+  .trow .avatar{width:42px;height:42px;font-size:17px}
+  .trow .sname{font-size:17.5px}
+  .tstate{display:flex;gap:6px;flex:none}
+  .tbtn{border:1.5px solid var(--line);background:var(--card);border-radius:9px;
+    padding:8px 11px;font-size:13.5px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:inherit}
+  .tbtn.in.on{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+  .tbtn.out.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
+  .tbtn.none.on{background:var(--bg);border-color:var(--ink3);color:var(--ink2)}
+  .summary{display:flex;gap:9px;flex-wrap:wrap;padding-top:14px;flex:none}
+  .stat{flex:1;min-width:100px;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:12px 14px}
+  .stat b{display:block;font-size:23px}
+  .stat span{font-size:12.5px;color:var(--ink3)}
+  table.adm{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;font-size:14.5px}
+  table.adm th{background:var(--bg);text-align:left;padding:10px 12px;font-size:13px;color:var(--ink2)}
+  table.adm td{padding:10px 12px;border-top:1px solid var(--line)}
+  table.adm td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  footer{text-align:center;font-size:11.5px;color:var(--ink3);padding:8px;border-top:1px solid var(--line);background:var(--card)}
+</style>
+</head>
+<body>
+
+<div id="banner">⚠️ 오프라인 모드 — 기록이 이 기기에만 저장됩니다 (백엔드 연결 전)</div>
+
+<header>
+  <div class="logo">한</div>
+  <div class="htitle">
+    <h1 id="schoolName">아미쿠스 한국학교</h1>
+    <p id="modeLabel">학생 체크인 · Check-in</p>
+  </div>
+  <div class="clock">
+    <div class="date" id="dateNow"></div>
+    <div class="time" id="timeNow">--:--</div>
+  </div>
+  <button class="hbtn" id="teacherBtn">선생님</button>
+  <button class="hbtn" id="adminBtn">관리자</button>
+</header>
+
+<main>
+  <!-- ============ 학부모 키오스크 ============ -->
+  <div class="stage" id="viewKiosk">
+    <div class="prompt">학생 이름을 검색해 주세요<small>이름 일부 또는 초성(ㄱㄴㄷ)으로도 검색됩니다</small></div>
+    <div class="searchbox">
+      <input id="q" type="text" placeholder="예: 김사랑 또는 ㄱㅅㄹ" autocomplete="off">
+      <span class="sicon" id="sicon">🔍</span>
+      <button id="clearBtn">✕</button>
+    </div>
+    <div class="scroll" id="results"><div class="hintbox">이름을 입력하면 학생이 여기에 표시됩니다</div></div>
+  </div>
+
+  <!-- ============ 선생님 ============ -->
+  <div class="stage" id="viewTeacher" style="display:none">
+    <div class="clsbar" id="clsBar"></div>
+    <div class="summary" id="tSummary"></div>
+    <div class="scroll" id="tList"></div>
+  </div>
+
+  <!-- ============ 관리자 ============ -->
+  <div class="stage" id="viewAdmin" style="display:none">
+    <div class="summary" id="aSummary"></div>
+    <div class="scroll" id="aBody" style="margin-top:14px"></div>
+    <div class="mbtns" style="flex:none">
+      <button class="btn sm ghost" id="csvBtn">오늘 기록 CSV 저장</button>
+      <button class="btn sm primary" id="refreshBtn">새로고침</button>
+    </div>
+  </div>
+</main>
+
+<footer id="footNote">아미쿠스 한국학교 체크인 시스템</footer>
+
+<div class="overlay" id="confirmOv"><div class="modal" id="confirmModal"></div></div>
+<div class="overlay" id="doneOv"><div class="modal done" id="doneModal"></div></div>
+<div class="overlay" id="pinOv"><div class="modal" id="pinModal"></div></div>
+
+<script>
+/* =====================================================================
+   CONFIG
+   API_URL: Google Apps Script 웹앱 URL. 비우면 오프라인(이 기기만) 모드.
+   ===================================================================== */
+const CONFIG = {
+  SCHOOL_NAME: "아미쿠스 한국학교",
+  API_URL: "https://script.google.com/macros/s/AKfycbziGOuwT-o0_IIGCxRvMVN069lWvTzjElM-4Le2s95HRA1N2rj-I5qB71XwZ6iTu9gH/exec",
+  TEACHER_PIN: "1111",
+  ADMIN_PIN: "2026",
+  SYNC_SEC: 30,           // 선생님/관리자 화면 자동 새로고침 주기(초)
+};
+
+/* 명단 (시트 '학생들' 탭 — 자동 생성됨. API 연결 시 시트에서 최신 명단을 다시 불러옵니다) */
+const ROSTER_DATA = []; // 명단은 백엔드(구글시트)에서 불러옵니다 — 개인정보 보호를 위해 공개 파일에 포함하지 않음
+
+let ROSTER = ROSTER_DATA.map(r => ({name:r[0], gender:r[1], cls:r[2], id:r[0]+"|"+r[2]}));
+let LOG = [];   // {id,name,gender,cls,type:'in'|'out'|'none',ts,by}
+let MODE = "kiosk";
+const $ = id => document.getElementById(id);
+const getClasses = () => [...new Set(ROSTER.map(s=>s.cls))];
+
+/* ---------- 초성 검색 ---------- */
+const CHO=["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+const choseong = s => [...s].map(ch => {
+  const c = ch.charCodeAt(0);
+  return (c>=0xAC00&&c<=0xD7A3) ? CHO[Math.floor((c-0xAC00)/588)] : ch;
+}).join("");
+const isChoOnly = s => [...s].every(ch => CHO.includes(ch)||ch===" ");
+
+/* ---------- 시계 ---------- */
+function tick(){
+  const n=new Date(), days=["일","월","화","수","목","금","토"];
+  $("dateNow").textContent=`${n.getFullYear()}. ${n.getMonth()+1}. ${n.getDate()} (${days[n.getDay()]})`;
+  $("timeNow").textContent=n.toTimeString().slice(0,5);
+}
+setInterval(tick,1000); tick();
+
+/* ---------- 로컬 백업 ---------- */
+function saveLocal(){ try{ localStorage.setItem("kc_log", JSON.stringify(LOG)); }catch(e){} }
+function loadLocal(){
+  try{
+    const all=JSON.parse(localStorage.getItem("kc_log")||"[]");
+    const today=new Date().toDateString();
+    LOG=all.filter(r=>new Date(r.ts).toDateString()===today);
+  }catch(e){}
+}
+
+/* ---------- 서버 통신 ---------- */
+async function api(params){
+  if(!CONFIG.API_URL) return null;
+  const u = CONFIG.API_URL + "?" + new URLSearchParams(params);
+  const r = await fetch(u); return r.json();
+}
+async function post(body){
+  if(!CONFIG.API_URL) return null;
+  return fetch(CONFIG.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+}
+async function syncFromServer(){
+  if(!CONFIG.API_URL) return;
+  try{
+    const d = await api({action:"today"});
+    if(d && d.ok){ LOG = d.log || []; saveLocal(); }
+    const r = await api({action:"roster"});
+    if(r && r.ok && r.roster && r.roster.length){
+      ROSTER = r.roster.map(s=>({...s, id:s.name+"|"+s.cls}));
+    }
+    $("banner").style.display="none";
+  }catch(e){ console.warn(e); }
+}
+
+/* ---------- 상태 ---------- */
+function stateOf(id){
+  let last=null;
+  for(const r of LOG) if(r.id===id) last=r;
+  return last ? last.type : "none";
+}
+
+/* ============================================================
+   학부모 키오스크
+   ============================================================ */
+function search(qraw){
+  const q=qraw.trim(), box=$("results");
+  $("clearBtn").style.display=q?"block":"none";
+  $("sicon").style.display=q?"none":"block";
+  if(!q){ box.innerHTML=`<div class="hintbox">이름을 입력하면 학생이 여기에 표시됩니다</div>`; return; }
+  const qn=q.replace(/\s/g,"");
+  const matches = ROSTER.filter(s=>{
+    const nm=s.name.replace(/\s/g,"");
+    return isChoOnly(qn) ? choseong(nm).includes(qn) : nm.includes(qn);
+  });
+  if(!matches.length){
+    box.innerHTML=`<div class="hintbox">검색 결과가 없습니다.<br>예) <span class="kbadge">김사랑</span> <span class="kbadge">ㄱㅅㄹ</span></div>`;
+    return;
+  }
+  box.innerHTML=matches.slice(0,30).map(s=>{
+    const st=stateOf(s.id);
+    const badge = st==="in" ? `<span class="badge in">✓ 등원</span>`
+                : st==="out" ? `<span class="badge out">하원함</span>`
+                : `<span class="badge pick">선택 ›</span>`;
+    return `<div class="scard" onclick="openConfirm('${s.id.replace(/'/g,"\\'")}')">
+      <div class="avatar ${s.gender==="여"?"f":"m"}">${s.name.replace(/\s/g,"")[0]||"?"}</div>
+      <div class="sinfo">
+        <div class="sname">${s.name}</div>
+        <div class="smeta"><span class="chip gender">${s.gender}</span><span class="chip cls">${s.cls}</span></div>
+      </div>${badge}</div>`;
+  }).join("");
+}
+$("q").addEventListener("input",e=>search(e.target.value));
+$("clearBtn").onclick=()=>{ $("q").value=""; search(""); $("q").focus(); };
+
+let current=null;
+function openConfirm(id){
+  const s=ROSTER.find(x=>x.id===id); if(!s) return;
+  current=s;
+  const st=stateOf(id), isIn=st==="in";
+  $("confirmModal").innerHTML=`
+    <div class="avatar ${s.gender==="여"?"f":"m"}">${s.name.replace(/\s/g,"")[0]}</div>
+    <h2>${s.name}</h2>
+    <div class="mmeta"><span class="chip gender">${s.gender}</span><span class="chip cls">${s.cls}</span></div>
+    <div class="q">${isIn?"오늘 이미 등원 체크인되어 있어요.":"이 학생이 맞나요?"}</div>
+    <div class="mbtns">
+      <button class="btn ghost" onclick="closeOv('confirmOv')">취소</button>
+      ${isIn?`<button class="btn warn" onclick="record('out','kiosk')">하원 체크아웃</button>`
+            :`<button class="btn primary" onclick="record('in','kiosk')">등원 체크인</button>`}
+    </div>`;
+  $("confirmOv").classList.add("show");
+}
+function closeOv(id){ $(id).classList.remove("show"); }
+
+async function record(type,by,student){
+  const s=student||current; if(!s) return;
+  const rec={id:s.id,name:s.name,gender:s.gender,cls:s.cls,type,ts:new Date().toISOString(),by};
+  LOG.push(rec); saveLocal();
+  closeOv("confirmOv");
+  if(by==="kiosk") showDone(rec);
+  post({action:"record",...rec}).catch(e=>console.warn(e));
+  if(MODE==="teacher") renderTeacher();
+  if(MODE==="admin") renderAdmin();
+}
+function showDone(rec){
+  const inn=rec.type==="in", t=new Date(rec.ts);
+  $("doneModal").innerHTML=`
+    <div class="ic ${rec.type}">${inn?"✓":"👋"}</div>
+    <h2>${rec.name} ${inn?"등원 완료!":"하원 완료"}</h2>
+    <div class="sub">${rec.cls} · ${t.getHours()}시 ${String(t.getMinutes()).padStart(2,"0")}분<br>${inn?"오늘도 즐거운 한국학교 되세요 😊":"다음 주에 만나요!"}</div>
+    <div class="mbtns"><button class="btn primary" onclick="finishDone()">확인</button></div>`;
+  $("doneOv").classList.add("show");
+  clearTimeout(window._dt); window._dt=setTimeout(finishDone,3500);
+}
+function finishDone(){ closeOv("doneOv"); $("q").value=""; search(""); $("q").blur(); }
+
+/* ============================================================
+   모드 전환 + PIN
+   ============================================================ */
+function askPin(target){
+  $("pinModal").innerHTML=`
+    <h2 style="font-size:20px">${target==="teacher"?"선생님":"관리자"} 확인</h2>
+    <div class="pinpad"><input id="pinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN"></div>
+    <div class="mbtns">
+      <button class="btn sm ghost" onclick="closeOv('pinOv')">취소</button>
+      <button class="btn sm primary" onclick="checkPin('${target}')">확인</button>
+    </div>`;
+  $("pinOv").classList.add("show");
+  setTimeout(()=>{ const i=$("pinInput"); i.focus(); i.onkeydown=e=>{ if(e.key==="Enter") checkPin(target); }; },80);
+}
+function checkPin(target){
+  const v=$("pinInput").value;
+  const ok = target==="teacher" ? v===CONFIG.TEACHER_PIN : v===CONFIG.ADMIN_PIN;
+  if(!ok){ $("pinInput").value=""; $("pinInput").placeholder="PIN이 틀렸어요"; return; }
+  closeOv("pinOv"); setMode(target);
+}
+function setMode(m){
+  MODE=m;
+  $("viewKiosk").style.display = m==="kiosk"?"flex":"none";
+  $("viewTeacher").style.display = m==="teacher"?"flex":"none";
+  $("viewAdmin").style.display = m==="admin"?"flex":"none";
+  $("teacherBtn").classList.toggle("active",m==="teacher");
+  $("adminBtn").classList.toggle("active",m==="admin");
+  $("modeLabel").textContent = m==="kiosk"?"학생 체크인 · Check-in":(m==="teacher"?"선생님 · 반별 출석":"관리자 · 전체 현황");
+  if(m==="teacher"){ syncFromServer().then(renderTeacher); renderTeacher(); }
+  if(m==="admin"){ syncFromServer().then(renderAdmin); renderAdmin(); }
+}
+$("teacherBtn").onclick=()=> MODE==="teacher" ? setMode("kiosk") : askPin("teacher");
+$("adminBtn").onclick=()=> MODE==="admin" ? setMode("kiosk") : askPin("admin");
+
+/* ============================================================
+   선생님 — 반별 출석표 (보기/변경)
+   ============================================================ */
+let curCls = null;
+function renderTeacher(){
+  const CLASSES=getClasses();
+  if(!curCls||!CLASSES.includes(curCls)) curCls=CLASSES[0];
+  $("clsBar").innerHTML=CLASSES.map(c=>
+    `<button class="clschip ${c===curCls?"on":""}" onclick="curCls='${c.replace(/'/g,"\\'")}';renderTeacher()">${c}</button>`).join("");
+  const kids=ROSTER.filter(s=>s.cls===curCls);
+  const nIn=kids.filter(s=>stateOf(s.id)==="in").length;
+  const nOut=kids.filter(s=>stateOf(s.id)==="out").length;
+  $("tSummary").innerHTML=`
+    <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
+    <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
+    <div class="stat"><b>${kids.length-nIn-nOut}</b><span>미등원</span></div>
+    <div class="stat"><b>${kids.length}</b><span>전체</span></div>`;
+  $("tList").innerHTML=kids.map(s=>{
+    const st=stateOf(s.id);
+    return `<div class="trow">
+      <div class="avatar ${s.gender==="여"?"f":"m"}">${s.name.replace(/\s/g,"")[0]}</div>
+      <div class="sinfo"><div class="sname">${s.name}</div></div>
+      <div class="tstate">
+        <button class="tbtn none ${st==="none"?"on":""}" onclick="tSet('${s.id.replace(/'/g,"\\'")}','none')">미등원</button>
+        <button class="tbtn in ${st==="in"?"on":""}" onclick="tSet('${s.id.replace(/'/g,"\\'")}','in')">등원</button>
+        <button class="tbtn out ${st==="out"?"on":""}" onclick="tSet('${s.id.replace(/'/g,"\\'")}','out')">하원</button>
+      </div></div>`;
+  }).join("");
+}
+function tSet(id,type){
+  const s=ROSTER.find(x=>x.id===id); if(!s) return;
+  if(stateOf(id)===type) return;
+  record(type,"teacher",s);
+}
+
+/* ============================================================
+   관리자 — 전체 현황
+   ============================================================ */
+function renderAdmin(){
+  const nIn=ROSTER.filter(s=>stateOf(s.id)==="in").length;
+  const nOut=ROSTER.filter(s=>stateOf(s.id)==="out").length;
+  $("aSummary").innerHTML=`
+    <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
+    <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
+    <div class="stat"><b>${ROSTER.length-nIn-nOut}</b><span>미등원</span></div>
+    <div class="stat"><b>${ROSTER.length}</b><span>전체 학생</span></div>`;
+  const rows=getClasses().map(c=>{
+    const kids=ROSTER.filter(s=>s.cls===c);
+    const cin=kids.filter(s=>stateOf(s.id)==="in");
+    const cout=kids.filter(s=>stateOf(s.id)==="out");
+    const none=kids.filter(s=>stateOf(s.id)==="none");
+    return `<tr>
+      <td><b>${c}</b></td>
+      <td class="num" style="color:var(--green)">${cin.length}</td>
+      <td class="num" style="color:var(--amber)">${cout.length}</td>
+      <td class="num">${none.length}</td>
+      <td class="num">${kids.length}</td>
+      <td style="font-size:12.5px;color:var(--ink3)">${none.map(s=>s.name).join(", ")||"—"}</td>
+    </tr>`;
+  }).join("");
+  $("aBody").innerHTML=`<table class="adm">
+    <tr><th>반</th><th style="text-align:right">등원</th><th style="text-align:right">하원</th><th style="text-align:right">미등원</th><th style="text-align:right">전체</th><th>미등원 학생</th></tr>
+    ${rows}</table>`;
+}
+$("refreshBtn").onclick=()=>syncFromServer().then(renderAdmin);
+$("csvBtn").onclick=()=>{
+  const head="이름,성별,등록수업,구분,시간,기록자\n";
+  const body=LOG.map(r=>{
+    const t=new Date(r.ts);
+    return `${r.name},${r.gender},${r.cls},${r.type==="in"?"등원":r.type==="out"?"하원":"취소"},${t.toLocaleString("ko-KR")},${r.by==="teacher"?"선생님":"키오스크"}`;
+  }).join("\n");
+  const blob=new Blob(["\uFEFF"+head+body],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`체크인기록_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+};
+
+/* ---------- 주기 동기화 ---------- */
+setInterval(()=>{
+  if(!CONFIG.API_URL) return;
+  if(MODE==="teacher") syncFromServer().then(renderTeacher);
+  else if(MODE==="admin") syncFromServer().then(renderAdmin);
+}, CONFIG.SYNC_SEC*1000);
+
+/* ---------- init ---------- */
+$("schoolName").textContent=CONFIG.SCHOOL_NAME;
+$("footNote").textContent=CONFIG.SCHOOL_NAME+" 체크인 시스템";
+if(!CONFIG.API_URL) $("banner").style.display="block";
+loadLocal();
+syncFromServer();
+search("");
+</script>
+</body>
+</html>
