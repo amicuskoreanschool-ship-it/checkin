@@ -14,6 +14,8 @@ const LEARN_SHEET = "학습현황";
 const EXAM_SHEET = "시험성적";
 const WEEKLY_SHEET = "주간마무리";
 const REASON_SHEET = "결석사유";
+const ADMIN_EMAIL = "amicuskoreanschool@gmail.com";
+const PORTAL_URL = "https://amicuskoreanschool-ship-it.github.io/checkin/teacher.html";
 
 function ss_() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
 function tz_() { return Session.getScriptTimeZone(); }
@@ -376,47 +378,94 @@ function setupNotionDatabase() {
   PropertiesService.getScriptProperties().setProperty("NOTION_DB_ID", data.id);
 }
 
-/* ================= 금요일 자동 요약 ================= */
+/* ================= 금요일 자동 요약 (금 오후 10시) ================= */
 function buildSummary_() {
   const roster = readRoster();
   const log = readTodayLog();
-  const learning = readLearning_("ALL").filter(function(l){ return l.date === todayStr_(); });
   const weekly = readWeekly_("ALL").filter(function(w){ return w.date === todayStr_(); });
   const last = {};
   log.forEach(function(r) { last[r.id] = r; });
-  const classes = roster.map(function(s){return s.cls;}).filter(function(v,i,a){return a.indexOf(v)===i;});
+  const classes = roster.map(function(s){return s.cls;}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  const rows = [];
   const lines = [];
-  let tIn = 0, tOut = 0, tNone = 0;
+  let tIn = 0, tNone = 0;
   classes.forEach(function(c) {
     const kids = roster.filter(function(s){return s.cls === c;});
-    const stIn = [], stOut = [], stNone = [];
+    let nIn = 0; const stNone = [];
     kids.forEach(function(s) {
       const st = last[s.name + "|" + s.cls];
-      if (st && st.type === "in") stIn.push(s.name);
-      else if (st && st.type === "out") stOut.push(s.name);
+      if (st && (st.type === "in" || st.type === "out")) nIn++;
       else stNone.push(s.name);
     });
-    tIn += stIn.length; tOut += stOut.length; tNone += stNone.length;
-    const lrn = learning.filter(function(l){ return l.cls === c; });
-    const hwDone = lrn.filter(function(l){ return l.hw === "O" }).length;
+    tIn += nIn; tNone += stNone.length;
     const wk = weekly.filter(function(w){ return w.cls === c; })[0];
-    lines.push(
-      "■ " + c + "  (등원 " + stIn.length + " / 하원 " + stOut.length + " / 미등원 " + stNone.length + ")\n" +
-      (stNone.length ? "  · 미등원: " + stNone.join(", ") + "\n" : "") +
-      (lrn.length ? "  · 학습: 숙제 완료 " + hwDone + "/" + lrn.length + "명, 받아쓰기 입력 " + lrn.filter(function(l){return l.dict!=="";}).length + "명\n" : "") +
-      ("  · 주간마무리: " + (wk ? (wk.note || "없음") : "미제출") + "\n")
-    );
+    rows.push({ cls: c, nIn: nIn, nNone: stNone.length, none: stNone, weekly: !!wk });
+    lines.push("■ " + c + " — 등원 " + nIn + "명 / 미등원 " + stNone.length + "명" +
+      (stNone.length ? " (" + stNone.join(", ") + ")" : "") +
+      " · 주간마무리 " + (wk ? "제출" : "미제출"));
   });
   const today = todayStr_();
-  const head = "[아미쿠스 한국학교] " + today + " 요약\n" +
-    "전체 " + roster.length + "명 — 등원 " + tIn + " / 하원 " + tOut + " / 미등원 " + tNone + "\n\n";
-  return { subject: "[한국학교] " + today + " 출석·학습·주간마무리 요약", body: head + lines.join("\n"), today: today };
+  const md = today.slice(5).replace("-", "/");
+  const trs = rows.map(function(r){
+    return "<tr><td style='padding:8px 14px;border-bottom:1px solid #F0E4D2;font-weight:700'>" + r.cls + "</td>" +
+      "<td style='padding:8px 14px;border-bottom:1px solid #F0E4D2;text-align:center;color:#2E7D32;font-weight:700'>" + r.nIn + "</td>" +
+      "<td style='padding:8px 14px;border-bottom:1px solid #F0E4D2;text-align:center;color:#C62828;font-weight:700'>" + r.nNone + "</td>" +
+      "<td style='padding:8px 14px;border-bottom:1px solid #F0E4D2;text-align:center'>" + (r.weekly ? "✅ 제출" : "⏳ 미제출") + "</td></tr>";
+  }).join("");
+  const html =
+    "<div style='font-family:Apple SD Gothic Neo,Malgun Gothic,sans-serif;max-width:640px;margin:0 auto;background:#FFF6EA;border-radius:16px;padding:26px'>" +
+    "<h2 style='color:#E85D04;margin:0 0 4px'>🏫 아미쿠스 한국학교 · " + md + " (금) 주간 요약</h2>" +
+    "<p style='font-size:16px;margin:14px 0'>전체 <b>" + roster.length + "명</b> 중 " +
+    "<span style='color:#2E7D32;font-weight:800'>등원 " + tIn + "명</span> · " +
+    "<span style='color:#C62828;font-weight:800'>미등원 " + tNone + "명</span></p>" +
+    "<table style='border-collapse:collapse;width:100%;background:#FFFDF8;border-radius:12px;overflow:hidden;font-size:14px'>" +
+    "<tr style='background:#F6E7CF'><th style='padding:9px 14px;text-align:left'>반</th><th style='padding:9px 14px'>등원</th><th style='padding:9px 14px'>미등원</th><th style='padding:9px 14px'>주간마무리</th></tr>" +
+    trs + "</table>" +
+    "<p style='color:#8A7A66;font-size:12.5px;margin-top:18px'>이 메일은 매주 금요일 오후 10시에 자동 발송됩니다 · <a href='" + PORTAL_URL + "'>선생님 포털 열기</a></p></div>";
+  return {
+    subject: "[아미쿠스 한국학교] " + md + " 주간 요약 — 등원 " + tIn + "명 / 미등원 " + tNone + "명",
+    body: "아미쿠스 한국학교 " + today + " 주간 요약\n전체 " + roster.length + "명 — 등원 " + tIn + " / 미등원 " + tNone + "\n\n" + lines.join("\n"),
+    html: html, today: today, weekly: weekly,
+  };
+}
+function sendTeacherReminders_(today, weekly) {
+  const teachers = readTeachers_();
+  const byEmail = {};
+  teachers.forEach(function(t) {
+    if (!t.email) return;
+    const done = weekly.some(function(w){ return w.cls === t.cls; });
+    if (done) return;
+    if (!byEmail[t.email]) byEmail[t.email] = { name: t.name, classes: [] };
+    byEmail[t.email].classes.push(t.cls);
+  });
+  let sent = 0;
+  Object.keys(byEmail).forEach(function(email) {
+    const info = byEmail[email];
+    const nm = info.name.replace(/\s*선생님\s*$/, "");
+    const md = today.slice(5).replace("-", "/");
+    const html =
+      "<div style='font-family:Apple SD Gothic Neo,Malgun Gothic,sans-serif;max-width:560px;margin:0 auto;background:#FFF6EA;border-radius:16px;padding:26px'>" +
+      "<h2 style='color:#E85D04;margin:0 0 12px'>📝 " + md + " 주간 마무리 안내</h2>" +
+      "<p style='font-size:16px;line-height:1.7'><b>" + nm + " 선생님</b> 주간 마무리가 안되었습니다.<br>주간 마무리를 부탁드립니다.</p>" +
+      "<p style='background:#FFFDF8;border-left:4px solid #FF8A3D;padding:12px 16px;border-radius:8px;font-size:14px'>" +
+      "담당 반: <b>" + info.classes.join(", ") + "</b><br>" +
+      "선생님 포털 → <b>주간마무리</b> 탭에서 작성해주세요.<br>특이사항이 없으면 <b>[특이사항 없음]</b> 버튼 클릭 OK!</p>" +
+      "<p style='margin-top:16px'><a href='" + PORTAL_URL + "' style='background:#FF8A3D;color:#fff;text-decoration:none;font-weight:800;padding:11px 22px;border-radius:99px;display:inline-block'>선생님 포털 열기</a></p>" +
+      "<p style='color:#8A7A66;font-size:12.5px;margin-top:18px'>아미쿠스 한국학교 · 이 메일은 자동 발송되었습니다.</p></div>";
+    MailApp.sendEmail({
+      to: email,
+      subject: "[아미쿠스 한국학교] " + md + " 주간 마무리 부탁드립니다 📝",
+      body: nm + " 선생님 주간 마무리가 안되었습니다. 주간 마무리를 부탁드립니다.\n" + PORTAL_URL,
+      htmlBody: html,
+    });
+    sent++;
+  });
+  return sent;
 }
 function fridaySummary() {
   const s = buildSummary_();
-  const to = PropertiesService.getScriptProperties().getProperty("SUMMARY_EMAIL")
-          || Session.getEffectiveUser().getEmail();
-  MailApp.sendEmail(to, s.subject, s.body);
+  MailApp.sendEmail({ to: ADMIN_EMAIL, subject: s.subject, body: s.body, htmlBody: s.html });
+  try { sendTeacherReminders_(s.today, s.weekly); } catch (e) { Logger.log("reminder error: " + e); }
   try {
     const headers = notionHeaders_();
     const parent = PropertiesService.getScriptProperties().getProperty("NOTION_PARENT");
@@ -442,8 +491,10 @@ function installFridayTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === "fridaySummary") ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger("fridaySummary").timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(21).create();
+  ScriptApp.newTrigger("fridaySummary").timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(22).create();
 }
+/* 테스트용: 관리자 요약 + 선생님 리마인더를 즉시 발송해보기 */
+function testFridayEmails() { fridaySummary(); }
 
 /* 테스트 */
 function testPortal() { Logger.log(JSON.stringify({
