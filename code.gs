@@ -127,6 +127,23 @@ function readTodayLog() {
   return log;
 }
 
+/* 날짜별 출석 이력 (학생별 마지막 상태) */
+function readAttendanceAll_(cls) {
+  const values = logSheet_().getDataRange().getValues();
+  const last = {};
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    const c = String(row[4] || "").trim();
+    if (cls && cls !== "ALL" && c !== cls) continue;
+    const date = fmtDate_(row[0]);
+    const gubun = row[5];
+    const key = date + "|" + row[2] + "|" + c;
+    last[key] = { date: date, name: String(row[2]), cls: c,
+      type: gubun === "등원" ? "in" : (gubun === "하원" ? "out" : "none") };
+  }
+  return Object.keys(last).map(function(k){ return last[k]; });
+}
+
 /* ================= 학습현황 (숙제·받아쓰기) ================= */
 function learnSheet_() {
   return getOrCreate_(LEARN_SHEET, ["날짜","반","이름","숙제","받아쓰기","기록자","수정시각"]);
@@ -232,6 +249,7 @@ function doGet(e) {
       payload = { ok: true,
         students: readStudentsFull_(cls),
         log: readTodayLog(),
+        att: readAttendanceAll_(cls),
         learning: readLearning_(cls),
         exams: readExams_(cls),
         weekly: readWeekly_(cls),

@@ -188,8 +188,21 @@ const FRIDAYS = (()=>{ const out=[]; const d=new Date(2026,7,14);
   for(let i=0;i<15;i++){ out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`); d.setDate(d.getDate()+7); }
   return out; })();
 const fridayLabel = iso => { const p=iso.split("-"); return `${+p[1]}/${+p[2]} (금)`; };
-function defaultFriday(){ const t=todayISO(); for(const f of FRIDAYS){ if(f>=t) return f; } return FRIDAYS[FRIDAYS.length-1]; }
-let LDATE = defaultFriday(); // 로그인한 날 기준 해당 주 금요일 자동 선택
+function defaultFriday(){
+  /* 매주 목요일부터 다가오는 금요일로 전환: 토~수 = 지난 금요일, 목~금 = 이번 금요일 */
+  const now = new Date(), dow = now.getDay(); // 0=일 ... 6=토
+  const t = new Date(now);
+  if(dow===4) t.setDate(now.getDate()+1);        // 목 → 내일(금)
+  else if(dow===6) t.setDate(now.getDate()-1);   // 토 → 어제(금)
+  else if(dow!==5) t.setDate(now.getDate()-((dow+2)%7)); // 일~수 → 지난 금요일
+  const iso = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  if(iso<=FRIDAYS[0]) return FRIDAYS[0];
+  for(const f of FRIDAYS){ if(f===iso) return f; }
+  for(const f of FRIDAYS){ if(f>=iso) return f; }
+  return FRIDAYS[FRIDAYS.length-1];
+}
+let LDATE = defaultFriday(); // 로그인한 날 기준 이번 주 수업일(금) 자동 선택
+const weekNum = d => FRIDAYS.indexOf(d)+1;
 let TEACHERS = [];
 
 async function api(params){
@@ -271,6 +284,10 @@ function stateOf(s){
 function learnOf(s, date){
   return P.learning.find(l=>l.date===date && l.cls===s.cls && l.name===s.name) || {hw:"",dict:""};
 }
+function attOf(s, date){
+  const r = (P.att||[]).find(a=>a.date===date && a.cls===s.cls && a.name===s.name);
+  return r ? r.type : "none"; // in/out = 그날 출석함
+}
 function examOf(s){
   return P.exams.find(x=>x.cls===s.cls && x.name===s.name) || {mid:"",fin:""};
 }
@@ -308,54 +325,56 @@ function render(){
 /* ============ 대시보드 ============ */
 function renderDash(){
   const list = myStudents();
-  const nIn = list.filter(s=>stateOf(s)==="in").length;
-  const nOut = list.filter(s=>stateOf(s)==="out").length;
-  const today = LDATE; // 이번 주 수업일(금요일) 기준
-  const lrn = list.map(s=>learnOf(s,today));
-  const hwDone = lrn.filter(l=>l.hw==="O").length;
-  const dictDone = lrn.filter(l=>l.dict!=="").length;
+  const wk = weekNum(LDATE);
+  const dateLabel = fridayLabel(LDATE).replace(" (금)","");
+  const nIn = list.filter(s=>attOf(s,LDATE)==="in").length;
+  const nOut = list.filter(s=>attOf(s,LDATE)==="out").length;
+  const attended = nIn+nOut;
   const now = new Date();
-  let html = `
-  <div class="stats">
+  let html = `<div class="card" style="padding:14px 18px"><h3 style="margin:0">${wk}주차 · ${dateLabel} (금) 이번 주 현황 <span class="live">● LIVE</span> <span class="muted">${now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})} 업데이트 · ${CONFIG.SYNC_SEC}초마다 자동</span></h3></div>`;
+  html += `<div class="stats">
     <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
     <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
-    <div class="stat"><b>${list.length-nIn-nOut}</b><span>미등원</span></div>
-    <div class="stat"><b style="color:var(--blue)">${hwDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>이번 주 숙제 완료</span></div>
-    <div class="stat"><b style="color:#6C4FC4">${dictDone}<small style="font-size:14px;color:var(--ink3)">/${list.length}</small></b><span>이번 주 받아쓰기</span></div>
-  </div>`;
+    <div class="stat"><b>${list.length-attended}</b><span>미등원</span></div>
+    <div class="stat"><b>${list.length}</b><span>전체</span></div>`;
   if(ME.isAdmin && FILTER==="ALL"){
-    html += `<div class="card"><h3>반별 현황 <span class="live">● LIVE</span> <span class="muted">${now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})} 업데이트</span></h3>
-    <table><tr><th>반</th><th>등원</th><th>하원</th><th>미등원</th><th>숙제완료</th><th>받아쓰기</th><th>주간마무리</th></tr>`;
+    const subs = classes().filter(c=>P.weekly.find(w=>w.date===LDATE&&w.cls===c)).length;
+    html += `<div class="stat"><b style="color:#6C4FC4">${subs}<small style="font-size:14px;color:var(--ink3)">/${classes().length}</small></b><span>주간마무리 제출</span></div>`;
+  } else {
+    const myCls = ME.isAdmin ? FILTER : ME.cls;
+    const mine = P.weekly.find(w=>w.date===LDATE && w.cls===myCls);
+    html += `<div class="stat"><b style="color:${mine?"var(--green)":"var(--ink3)"};font-size:22px">${mine?"제출 ✓":"미제출"}</b><span>주간마무리</span></div>`;
+  }
+  html += `</div>`;
+  if(ME.isAdmin && FILTER==="ALL"){
+    html += `<div class="card"><h3>반별 현황 <span class="muted">반 이름을 누르면 그 반의 주차별 출석표가 보여요</span></h3>
+    <table><tr><th>반</th><th>등원</th><th>하원</th><th>미등원</th><th>주간마무리</th></tr>`;
     classes().forEach(c=>{
-      const kids = P.students.filter(s=>s.cls===c);
-      const cin = kids.filter(s=>stateOf(s)==="in").length;
-      const cout = kids.filter(s=>stateOf(s)==="out").length;
-      const chw = kids.filter(s=>learnOf(s,today).hw==="O").length;
-      const cdict = kids.filter(s=>learnOf(s,today).dict!=="").length;
-      const wk = P.weekly.find(w=>w.date===today && w.cls===c);
-      html += `<tr><td>${clsChip(c)}</td>
+      const kids=P.students.filter(s=>s.cls===c);
+      const cin=kids.filter(s=>attOf(s,LDATE)==="in").length;
+      const cout=kids.filter(s=>attOf(s,LDATE)==="out").length;
+      const wkk=P.weekly.find(w=>w.date===LDATE&&w.cls===c);
+      html += `<tr style="cursor:pointer" onclick="FILTER='${c.replace(/'/g,"\\'")}';render()">
+        <td>${clsChip(c)}</td>
         <td style="color:var(--green);font-weight:800">${cin}</td>
         <td style="color:var(--amber);font-weight:800">${cout}</td>
         <td>${kids.length-cin-cout}</td>
-        <td>${chw}/${kids.length}</td><td>${cdict}/${kids.length}</td>
-        <td>${wk?`<span class="chip badge-ok">제출</span>`:`<span class="chip badge-none">미제출</span>`}</td></tr>`;
+        <td>${wkk?`<span class="chip badge-ok">제출</span>`:`<span class="chip badge-none">미제출</span>`}</td></tr>`;
     });
     html += `</table></div>`;
+  } else {
+    html += `<div class="card"><h3>주차별 출석 <span class="muted">가을학기 15주 · ✓ = 그날 출석함</span></h3>
+    <div style="overflow-x:auto"><table><tr><th>이름</th>${FRIDAYS.map(d=>`<th style="text-align:center;${d===LDATE?"color:var(--orange-deep)":""}">${weekNum(d)}주<br>${d.slice(5).replace("-","/")}</th>`).join("")}</tr>`;
+    list.forEach(s=>{
+      html += `<tr><td style="white-space:nowrap">${gAvatar(s,28,12)} <b class="jua">${esc(s.name)}</b></td>`;
+      FRIDAYS.forEach(d=>{
+        const a = attOf(s,d);
+        html += `<td style="text-align:center">${a!=="none"?`<span style="color:var(--green);font-weight:800">✓</span>`:""}</td>`;
+      });
+      html += `</tr>`;
+    });
+    html += `</table></div></div>`;
   }
-  html += `<div class="card"><h3>학생 현황 <span class="live">● LIVE</span> <span class="muted">${CONFIG.SYNC_SEC}초마다 자동 업데이트</span></h3>
-  <table><tr><th>이름</th>${ME.isAdmin?"<th>반</th>":""}<th>출석</th><th>오늘 숙제</th><th>받아쓰기</th><th>알러지</th></tr>`;
-  list.forEach(s=>{
-    const st = stateOf(s), l = learnOf(s,today);
-    html += `<tr>
-      <td>${gAvatar(s,30,13)} <b class="jua" style="font-size:15px">${esc(s.name)}</b> <span class="muted">${esc(s.eng)}</span></td>
-      ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
-      <td>${st==="in"?`<span class="chip badge-in">✓ 등원</span>`:st==="out"?`<span class="chip badge-out">하원</span>`:`<span class="chip badge-none">미등원</span>`}</td>
-      <td>${l.hw==="O"?`<span class="chip badge-ok">O</span>`:l.hw==="X"?`<span class="chip badge-no">X</span>`:`<span class="chip badge-none">—</span>`}</td>
-      <td>${l.dict!==""?`<b>${esc(l.dict)}</b>점`:`<span class="muted">—</span>`}</td>
-      <td>${s.allergy?`<span class="chip badge-no">⚠ ${esc(s.allergy)}</span>`:`<span class="muted">—</span>`}</td>
-    </tr>`;
-  });
-  html += `</table></div>`;
   $("viewBox").innerHTML = html;
 }
 
