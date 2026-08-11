@@ -193,8 +193,7 @@
     <h1 id="schoolName">아미쿠스 한국학교</h1>
     <p id="modeLabel">어서 오세요! · Check-in</p>
   </div>
-  <button class="hbtn" id="teacherBtn">선생님</button>
-  <button class="hbtn" id="adminBtn">관리자</button>
+  <a class="hbtn" href="teacher.html" style="text-decoration:none">선생님 포털</a>
 </header>
 
 <main>
@@ -444,8 +443,7 @@ function setMode(m){
   if(m==="teacher"){ syncFromServer().then(renderTeacher); renderTeacher(); }
   if(m==="admin"){ syncFromServer().then(renderAdmin); renderAdmin(); }
 }
-$("teacherBtn").onclick=()=> MODE==="teacher" ? setMode("kiosk") : askPin("teacher");
-$("adminBtn").onclick=()=> MODE==="admin" ? setMode("kiosk") : askPin("admin");
+/* 선생님/관리자 기능은 teacher.html 포털로 이동했습니다 */
 
 /* ============================================================
    선생님 — 반별 출석표

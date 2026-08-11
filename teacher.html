@@ -80,6 +80,16 @@
   .hwbtn.X.on{background:var(--red-bg);border-color:var(--red);color:var(--red)}
   .savemark{font-size:12px;color:var(--green);font-weight:800;opacity:0;transition:opacity .3s}
   .savemark.show{opacity:1}
+  .gav{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;
+    font-family:"Jua";flex:none;vertical-align:middle}
+  .arow{background:var(--paper);border:2px solid var(--line);border-radius:18px;
+    padding:12px 16px;display:flex;align-items:center;gap:13px;margin-bottom:9px}
+  .arow .nm{font-family:"Jua";font-size:18px;flex:1}
+  .abtn{border:2px solid var(--line);background:#fff;border-radius:12px;
+    padding:9px 13px;font-size:13.5px;font-weight:800;color:var(--ink3);cursor:pointer;font-family:inherit}
+  .abtn.none.on{background:var(--line-soft);border-color:var(--ink3);color:var(--ink2)}
+  .abtn.in.on{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+  .abtn.out.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
   /* class filter chips */
   .clsbar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 14px}
   .clschip{flex:none;border:2px solid var(--line);background:#fff;border-radius:99px;
@@ -160,6 +170,8 @@ const CLS_COLORS = {
   "자비":["#E2F5F0","#1F9077"],"파도":["#E3ECFB","#3757B8"],"하늘":["#E0F2FF","#2B8FD8"],
 };
 const clsColor = c => { const k=Object.keys(CLS_COLORS).find(k=>(c||"").startsWith(k)); return k?CLS_COLORS[k]:["#F3EBE0","#8A6D4F"]; };
+const genderColor = g => g==="여" ? ["#FDE7EF","#D14D84"] : ["#E3F0FE","#2E6FBB"];
+const gAvatar = (s,size=40,fs=17) => `<span class="gav" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${genderColor(s.gender)[0]};color:${genderColor(s.gender)[1]}">${esc(s.name.replace(/\s/g,"")[0]||"?")}</span>`;
 const clsChip = c => `<span class="chip" style="background:${clsColor(c)[0]};color:${clsColor(c)[1]}">${c}</span>`;
 const esc = s => String(s??"").replace(/</g,"&lt;");
 const todayISO = () => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
@@ -216,7 +228,7 @@ function logout(){
 }
 
 /* ============ 포털 공통 ============ */
-const NAVS_T = [["dash","대시보드"],["roster","명단"],["learn","학습현황"],["exam","시험 성적"],["weekly","주간마무리"]];
+const NAVS_T = [["dash","대시보드"],["attend","출석 체크"],["roster","명단"],["learn","학습현황"],["exam","시험 성적"],["weekly","주간마무리"]];
 async function enterPortal(){
   $("loginView").classList.add("hidden");
   $("portalView").classList.remove("hidden");
@@ -277,6 +289,7 @@ function render(){
   if(!P) return;
   renderFilter();
   if(VIEW==="dash") renderDash();
+  else if(VIEW==="attend") renderAttend();
   else if(VIEW==="roster") renderRoster();
   else if(VIEW==="learn") renderLearn();
   else if(VIEW==="exam") renderExam();
@@ -325,7 +338,7 @@ function renderDash(){
   list.forEach(s=>{
     const st = stateOf(s), l = learnOf(s,today);
     html += `<tr>
-      <td><b class="jua" style="font-size:15px">${esc(s.name)}</b> <span class="muted">${esc(s.eng)}</span></td>
+      <td>${gAvatar(s,30,13)} <b class="jua" style="font-size:15px">${esc(s.name)}</b> <span class="muted">${esc(s.eng)}</span></td>
       ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
       <td>${st==="in"?`<span class="chip badge-in">✓ 등원</span>`:st==="out"?`<span class="chip badge-out">하원</span>`:`<span class="chip badge-none">미등원</span>`}</td>
       <td>${l.hw==="O"?`<span class="chip badge-ok">O</span>`:l.hw==="X"?`<span class="chip badge-no">X</span>`:`<span class="chip badge-none">—</span>`}</td>
@@ -337,18 +350,51 @@ function renderDash(){
   $("viewBox").innerHTML = html;
 }
 
+/* ============ 출석 체크 ============ */
+function renderAttend(){
+  const list = myStudents();
+  const nIn = list.filter(s=>stateOf(s)==="in").length;
+  const nOut = list.filter(s=>stateOf(s)==="out").length;
+  let html = `
+  <div class="stats">
+    <div class="stat"><b style="color:var(--green)">${nIn}</b><span>등원 중</span></div>
+    <div class="stat"><b style="color:var(--amber)">${nOut}</b><span>하원</span></div>
+    <div class="stat"><b>${list.length-nIn-nOut}</b><span>미등원</span></div>
+    <div class="stat"><b>${list.length}</b><span>전체</span></div>
+  </div>`;
+  html += list.map((s,i)=>{
+    const st = stateOf(s);
+    return `<div class="arow">
+      ${gAvatar(s,46,20)}
+      <span class="nm">${esc(s.name)}</span>
+      ${ME.isAdmin?clsChip(s.cls):""}
+      <button class="abtn none ${st==="none"?"on":""}" onclick="aSet(${i},'none')">미등원</button>
+      <button class="abtn in ${st==="in"?"on":""}" onclick="aSet(${i},'in')">등원</button>
+      <button class="abtn out ${st==="out"?"on":""}" onclick="aSet(${i},'out')">하원</button>
+    </div>`;
+  }).join("");
+  $("viewBox").innerHTML = html;
+}
+async function aSet(i,type){
+  const s = myStudents()[i];
+  if(stateOf(s)===type) return;
+  P.log.push({id:s.name+"|"+s.cls, name:s.name, gender:s.gender, cls:s.cls, type, by:"선생님", ts:new Date().toISOString()});
+  render();
+  await post({action:"record", id:s.name+"|"+s.cls, name:s.name, gender:s.gender, cls:s.cls, type, ts:new Date().toISOString(), by:"teacher"});
+}
+
 /* ============ 명단 ============ */
 function renderRoster(){
   const list = myStudents();
   let html = `<div class="card"><h3>학생 명단 <span class="muted">${list.length}명 · 수정하면 구글 시트에 바로 반영됩니다</span></h3>
   <div style="overflow-x:auto"><table>
-  <tr><th>이름</th><th>영어이름</th>${ME.isAdmin?"<th>반</th>":""}<th>학년</th><th>나이</th><th>부모님</th><th>연락처</th><th>이메일</th><th>알러지</th><th></th></tr>`;
+  <tr><th>이름</th><th>영어이름</th>${ME.isAdmin?"<th>반</th>":""}<th>학년</th><th>생년월일</th><th>부모님</th><th>연락처</th><th>이메일</th><th>알러지</th><th></th></tr>`;
   list.forEach(s=>{
     html += `<tr>
       <td><b class="jua" style="font-size:15px">${esc(s.name)}</b></td>
       <td>${esc(s.eng)}</td>
       ${ME.isAdmin?`<td>${clsChip(s.cls)}</td>`:""}
-      <td>${esc(s.grade)}</td><td>${age(s.birth)}</td>
+      <td>${esc(s.grade)}</td><td style="white-space:nowrap">${esc(s.birth)}</td>
       <td>${esc(s.parent)}</td><td style="white-space:nowrap">${esc(s.phone)}</td>
       <td style="font-size:12.5px">${esc(s.email)}</td>
       <td>${s.allergy?`<span class="chip badge-no">${esc(s.allergy)}</span>`:"—"}</td>
