@@ -167,7 +167,7 @@ const CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbziGOuwT-o0_IIGCxRvMVN069lWvTzjElM-4Le2s95HRA1N2rj-I5qB71XwZ6iTu9gH/exec",
   TEACHER_PIN: "1111",
   ADMIN_PIN: "2026",
-  SYNC_SEC: 30,
+  SYNC_SEC: 15,
 };
 const $ = id => document.getElementById(id);
 const CLS_COLORS = {
@@ -267,12 +267,15 @@ async function enterPortal(){
     `<button class="navbtn ${k===VIEW?"on":""}" data-v="${k}" onclick="go('${k}')">${label}</button>`).join("");
   await refresh(true);
   setInterval(()=>{ refresh(false); }, CONFIG.SYNC_SEC*1000);
+  // 화면을 다시 켜거나 탭으로 돌아오면 즉시 최신 데이터로
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) refresh(false); });
+  window.addEventListener("focus", ()=>refresh(false));
 }
 function go(v){ VIEW=v; document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); render(); }
 async function refresh(showLoading){
   if(showLoading) $("viewBox").innerHTML = `<div class="card"><h3>불러오는 중...</h3></div>`;
   try{
-    const d = await api({action:"portal", cls: ME.isAdmin ? "ALL" : ME.cls});
+    const d = await api({action:"portal", cls: ME.isAdmin ? "ALL" : ME.cls, date: defaultFriday()});
     if(d.ok){
       P = d;
       const ae = document.activeElement; // 입력 중이면 화면을 다시 그리지 않음 (입력 내용 보호)

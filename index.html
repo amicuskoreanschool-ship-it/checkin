@@ -295,6 +295,25 @@ function tick(){
 }
 setInterval(tick,1000); tick();
 
+/* ---------- 수업일 기준 (선생님 포털과 동일) ----------
+   🗓️ 가을학기 2026-08-14부터 15주, 금요일 수업.
+   체크인 기록을 '그 주 수업일(금)'로 귀속시켜 선생님 포털과 항상 같은 날짜를 보게 합니다. */
+const FRIDAYS = (()=>{ const out=[]; const d=new Date(2026,7,14);
+  for(let i=0;i<15;i++){ out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`); d.setDate(d.getDate()+7); }
+  return out; })();
+function classDate(){
+  const now = new Date(), dow = now.getDay(); // 0=일 ... 6=토
+  const t = new Date(now);
+  if(dow===4) t.setDate(now.getDate()+1);        // 목 → 내일(금)
+  else if(dow===6) t.setDate(now.getDate()-1);   // 토 → 어제(금)
+  else if(dow!==5) t.setDate(now.getDate()-((dow+2)%7)); // 일~수 → 지난 금요일
+  const iso = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  if(iso<=FRIDAYS[0]) return FRIDAYS[0];
+  for(const f of FRIDAYS){ if(f===iso) return f; }
+  for(const f of FRIDAYS){ if(f>=iso) return f; }
+  return FRIDAYS[FRIDAYS.length-1];
+}
+
 /* ---------- 로컬 백업 ---------- */
 function saveLocal(){ try{ localStorage.setItem("kc_log", JSON.stringify(LOG)); }catch(e){} }
 function loadLocal(){
@@ -325,7 +344,7 @@ async function syncFromServer(){
     }
   }catch(e){ console.warn("roster", e); }
   try{
-    const d = await api({action:"today"});
+    const d = await api({action:"today", date: classDate()});
     if(d && d.ok){ LOG = d.log || []; saveLocal(); }
   }catch(e){ console.warn("today", e); }
 }
@@ -396,7 +415,7 @@ async function record(type,by,student){
   LOG.push(rec); saveLocal();
   closeOv("confirmOv");
   if(by==="kiosk") showDone(rec);
-  post({action:"record",...rec}).catch(e=>console.warn(e));
+  post({action:"record",...rec, date: classDate()}).catch(e=>console.warn(e));
   if(MODE==="teacher") renderTeacher();
   if(MODE==="admin") renderAdmin();
 }

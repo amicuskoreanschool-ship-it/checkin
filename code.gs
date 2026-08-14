@@ -113,9 +113,9 @@ function readTeachers_() {
 function logSheet_() {
   return getOrCreate_(LOG_SHEET, ["날짜","시간","이름","성별","등록수업","구분","기록자","ISO시각"]);
 }
-function readTodayLog() {
+function readTodayLog(dateStr) {
   const values = logSheet_().getDataRange().getValues();
-  const today = todayStr_();
+  const today = dateStr ? String(dateStr) : todayStr_();
   const log = [];
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
@@ -282,13 +282,13 @@ function doGet(e) {
   let payload;
   try {
     if (action === "roster") payload = { ok: true, roster: readRoster() };
-    else if (action === "today") payload = { ok: true, log: readTodayLog() };
+    else if (action === "today") payload = { ok: true, log: readTodayLog(p.date) };
     else if (action === "teachers") payload = { ok: true, teachers: readTeachers_() };
     else if (action === "portal") {
       const cls = p.cls || "ALL";
       payload = { ok: true,
         students: readStudentsFull_(cls),
-        log: readTodayLog(),
+        log: readTodayLog(p.date),
         att: readAttendanceAll_(cls),
         learning: readLearning_(cls),
         exams: readExams_(cls),
