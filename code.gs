@@ -76,7 +76,7 @@ function readStudentsFull_(cls) {
 }
 function readRoster() {
   return readStudentsFull_("ALL").map(function(s) {
-    return { name: s.name, gender: s.gender, cls: s.cls };
+    return { name: s.name, eng: s.eng, gender: s.gender, cls: s.cls };
   });
 }
 function updateStudent_(req) {

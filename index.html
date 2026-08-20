@@ -211,7 +211,7 @@
     <div class="prompt">오늘도 아미쿠스 한국학교에 오신 것을 환영합니다! 💛<small>아래에서 아이의 이름을 검색하여 체크인/체크아웃을 진행해주세요.</small></div>
     <div class="kclock"><span class="kd" id="dateNow"></span><span class="kt" id="timeNow">--:--</span></div>
     <div class="searchbox">
-      <input id="q" type="text" placeholder="예: 홍길동 또는 ㅎㄱㄷ" autocomplete="off">
+      <input id="q" type="text" placeholder="예: 홍길동, ㅎㄱㄷ 또는 Evan" autocomplete="off">
       <span class="sicon" id="sicon">🔍</span>
       <button id="clearBtn">✕</button>
     </div>
@@ -366,12 +366,15 @@ function search(qraw){
   $("sicon").style.display=q?"none":"block";
   if(!q){ box.innerHTML=`<div class="hintbox">이름을 입력하면 학생이 여기에 나타나요</div>`; return; }
   const qn=q.replace(/\s/g,"");
+  const qe=qn.toLowerCase(); // 영어이름 검색용 (대소문자 무시)
   const matches = ROSTER.filter(s=>{
     const nm=s.name.replace(/\s/g,"");
+    const en=(s.eng||"").replace(/\s/g,"").toLowerCase();
+    if(en && en.includes(qe)) return true;
     return isChoOnly(qn) ? choseong(nm).includes(qn) : nm.includes(qn);
   });
   if(!matches.length){
-    box.innerHTML=`<div class="hintbox">검색 결과가 없어요.<br>예) <span class="kbadge">홍길동</span> <span class="kbadge">ㅎㄱㄷ</span></div>`;
+    box.innerHTML=`<div class="hintbox">검색 결과가 없어요.<br>예) <span class="kbadge">홍길동</span> <span class="kbadge">ㅎㄱㄷ</span> <span class="kbadge">Evan</span></div>`;
     return;
   }
   box.innerHTML=matches.slice(0,30).map((s,i)=>{
@@ -382,7 +385,7 @@ function search(qraw){
     return `<div class="scard" style="animation-delay:${Math.min(i*40,240)}ms" onclick="openConfirm('${s.id.replace(/'/g,"\\'")}')">
       ${avatarHtml(s)}
       <div class="sinfo">
-        <div class="sname">${s.name}</div>
+        <div class="sname">${s.name}${s.eng?` <span style="font-family:'Pretendard Variable',sans-serif;font-size:13.5px;color:var(--ink3);font-weight:600">${s.eng}</span>`:""}</div>
         <div class="smeta"><span class="chip gender">${s.gender}</span>${clsChip(s)}</div>
       </div>${badge}</div>`;
   }).join("");
@@ -398,6 +401,7 @@ function openConfirm(id){
   $("confirmModal").innerHTML=`
     ${avatarHtml(s)}
     <h2>${s.name}</h2>
+    ${s.eng?`<div style="color:var(--ink3);font-size:14px;font-weight:600;margin-top:2px">${s.eng}</div>`:""}
     <div class="mmeta"><span class="chip gender">${s.gender}</span>${clsChip(s)}</div>
     <div class="q">${isIn?"오늘 이미 등원 도장을 받았어요.":"우리 아이가 맞나요?"}</div>
     <div class="mbtns">
